@@ -7,7 +7,8 @@ import ChipStack from '@/components/ChipStack.vue'
  */
 const CHIP_TYPES = {
   red: { value: 5 },
-  green: { value: 25 }
+  green: { value: 25 },
+  white: {value:1}
 }
 
 /**
@@ -28,19 +29,53 @@ function splitRedStacks(count) {
   const result = []
   let remaining = count
 
-  // 每 20 个一组
+  // 1️⃣ 20 优先
   while (remaining >= 20) {
     result.push(20)
     remaining -= 20
   }
 
-  // 剩余 < 20 的直接一组
+  // 2️⃣ 20 以内，多拆 4 / 5
+  while (remaining >= 4) {
+    // 特殊情况：7
+    if (remaining === 7) {
+      if (Math.random() < 0.5) {
+        result.push(4)
+        result.push(3)
+      } else {
+        result.push(5)
+        result.push(2)
+      }
+      remaining = 0
+      break
+    }
+
+    // 正常情况：4 或 5 随机
+    const choice = Math.random() < 0.5 ? 4 : 5
+
+    if (remaining >= choice) {
+      result.push(choice)
+      remaining -= choice
+    } else {
+      // 如果选错了（比如剩 4 却选 5），换另一个
+      const alt = choice === 4 ? 5 : 4
+      if (remaining >= alt) {
+        result.push(alt)
+        remaining -= alt
+      } else {
+        break
+      }
+    }
+  }
+
+  // 3️⃣ 剩余 1 / 2 / 3 直接合并
   if (remaining > 0) {
     result.push(remaining)
   }
 
   return result
 }
+
 
 
 const round = ref(0)
