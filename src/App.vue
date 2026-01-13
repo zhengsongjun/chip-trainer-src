@@ -279,7 +279,7 @@ newRound()
 
 <style scoped>
 .app {
-  max-width: 860px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 16px;
 }
