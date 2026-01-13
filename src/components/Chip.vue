@@ -54,7 +54,7 @@ const Comp = computed(() => mapByColor[props.color][props.angle])
 </template>
 
 <style scoped>
-.chip { position: relative; display: block; }
-.chip-svg { width: 100%; height: 100%; display: block; }
+.chip { position: relative; display: block;  }
+.chip-svg { width: 100%; height: 100%; display: block;   }
 
 </style>

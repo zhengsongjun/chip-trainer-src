@@ -72,9 +72,11 @@ const height = computed(() => size.value + (count.value - 1) * spacing.value)
          :key="i"
          class="chip-layer"
          :style="{
-           bottom: (i * spacing) + 'px',
-           zIndex: 1000 + i
-         }">
+            bottom: (i * spacing) + 'px',
+            zIndex: 1000 + i,
+            transform: `translate(0px, ${2 * i}px)`
+          }"
+          >
       <Chip :color="color" :angle="item.angle" :size="size" :shadow="true" />
     </div>
   </div>
@@ -84,6 +86,7 @@ const height = computed(() => size.value + (count.value - 1) * spacing.value)
 .chip-stack {
   position: relative;
   touch-action: manipulation;
+
   /* 可选：父级控制整体缩放适配容器 */
 }
 .chip-layer {
