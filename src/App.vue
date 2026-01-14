@@ -9,23 +9,13 @@ const CHIP_TYPES = {
   red: { value: 5 },
   green: { value: 25 },
   white: { value: 1 },
-}
-
-/**
- * 随机总值（5 的倍数）
- */
-function randomTotalValue() {
-  const min = 10
-  const max = 250
-  const step = 5
-  const n = Math.floor(Math.random() * ((max - min) / step + 1))
-  return min + n * step
+  black: { value: 100 },
 }
 
 /**
  * 红色分组
  */
-function splitRedStacks(count) {
+function splitRedStacks(count, choice) {
   const result = []
   let remaining = count
 
@@ -34,25 +24,10 @@ function splitRedStacks(count) {
     remaining -= 20
   }
 
-  while (remaining >= 4) {
-    if (remaining === 7) {
-      Math.random() < 0.5
-        ? result.push(4, 3)
-        : result.push(5, 2)
-      remaining = 0
-      break
-    }
-
-    const choice = Math.random() < 0.5 ? 4 : 5
+  while (remaining > 5) {
     if (remaining >= choice) {
       result.push(choice)
       remaining -= choice
-    } else {
-      const alt = choice === 4 ? 5 : 4
-      if (remaining >= alt) {
-        result.push(alt)
-        remaining -= alt
-      } else break
     }
   }
 
@@ -119,9 +94,11 @@ const feedback = ref('idle')
 
 // Element Plus 颜色选择（默认全选）
 const enabledColors = ref(['green', 'red', 'white'])
+const gameType = ref(['cash', 'tournament'])
 
 // 白色数量区间
 const whiteRange = ref('1-20')
+const showAnswer = ref(false)
 
 function getEnabledColors() {
   return enabledColors.value
@@ -143,7 +120,7 @@ function generateChips() {
         ? Math.floor(Math.random() * 20) + 1
         : Math.floor(Math.random() * 41) + 20
 
-    splitWhiteStacks(whiteCount).forEach(c => {
+    splitWhiteStacks(whiteCount).forEach((c) => {
       groups.push({ color: 'white', count: c })
     })
 
@@ -155,24 +132,23 @@ function generateChips() {
   let greenCount = 0
 
   if (colors.includes('red') || colors.includes('green')) {
-    // 至少 5 个红起步
-    redCount = Math.floor(Math.random() * 20 + 5)
+    redCount = Math.floor(Math.random() * 100)
 
     if (colors.includes('green')) {
       // 至少 1 个绿
-      greenCount = Math.max(1, Math.floor(redCount / 5))
-      redCount -= greenCount * 5
+      greenCount = Math.floor(Math.random() * 50)
     }
 
     if (colors.includes('green') && greenCount > 0) {
-      splitGreenStacks(greenCount).forEach(c => {
+      splitGreenStacks(greenCount).forEach((c) => {
         groups.push({ color: 'green', count: c })
       })
       total += greenCount * CHIP_TYPES.green.value
     }
 
+    let choice = Math.random() < 0.5 ? 4 : 5
     if (colors.includes('red') && redCount > 0) {
-      splitRedStacks(redCount).forEach(c => {
+      splitRedStacks(redCount, choice).forEach((c) => {
         groups.push({ color: 'red', count: c })
       })
       total += redCount * CHIP_TYPES.red.value
@@ -193,7 +169,6 @@ function generateChips() {
   }
 }
 
-
 /* ================= 交互 ================= */
 
 function newRound() {
@@ -211,6 +186,10 @@ function onSubmit() {
   if (feedback.value === 'correct') setTimeout(newRound, 700)
 }
 
+function toggleShowAnswer() {
+  showAnswer.value = !showAnswer.value
+}
+
 newRound()
 </script>
 
@@ -222,6 +201,12 @@ newRound()
 
     <!-- 配置区 -->
     <el-form label-position="top" class="filters">
+      <el-form-item label="游戏类型">
+        <el-radio-group v-model="gameType">
+          <el-radio label="cash">现金桌</el-radio>
+          <el-radio label="tournament">锦标赛</el-radio>
+        </el-radio-group>
+      </el-form-item>
       <el-form-item label="筹码颜色">
         <el-checkbox-group v-model="enabledColors">
           <el-space size="large">
@@ -246,12 +231,7 @@ newRound()
     <section class="board">
       <div class="stacks">
         <div v-for="(group, idx) in chipGroups" :key="`${round}-${idx}`" class="stack">
-          <ChipStack
-            :color="group.color"
-            :count="group.count"
-            :size="72"
-            :spacing="10"
-          />
+          <ChipStack :color="group.color" :count="group.count" :size="72" :spacing="10" />
         </div>
       </div>
     </section>
@@ -269,15 +249,23 @@ newRound()
       <div class="actions">
         <button @click="onSubmit">提交</button>
         <button @click="newRound">换一题</button>
+        <button @click="toggleShowAnswer">显示答案</button>
       </div>
 
       <p v-if="feedback === 'correct'" class="ok">正确！</p>
       <p v-else-if="feedback === 'wrong'" class="err">不对哦～</p>
+      <p v-if="showAnswer">答案是: {{ correctValue }}</p>
     </section>
   </main>
 </template>
 
 <style scoped>
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 .app {
   max-width: 1200px;
   margin: 0 auto;
