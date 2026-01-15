@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, watch } from 'vue'
 
 const props = defineProps<{
   modelValue: string
@@ -12,49 +12,75 @@ const emit = defineEmits<{
 
 const len = props.length ?? 7
 
-// 内部状态：每个格子的值（这是唯一权威）
+/* ================= 数据源 ================= */
 const values = ref<string[]>(Array(len).fill(''))
 
-// refs 用来控制 focus
-const inputs = ref<HTMLInputElement[]>([])
-
-// 对外同步（只拼接，不反推）
-function syncValue() {
-  emit('update:modelValue', values.value.join(''))
+/* ================= input refs（index 对齐） ================= */
+const inputs = ref<(HTMLInputElement | null)[]>([])
+function setInputRef(el: HTMLInputElement | null, index: number) {
+  inputs.value[index] = el
 }
 
-// 输入处理（所见即所得）
+/* ================= 内部同步锁 ================= */
+let syncingFromInside = false
+
+function syncValue() {
+  syncingFromInside = true
+  emit('update:modelValue', values.value.join(''))
+  nextTick(() => {
+    syncingFromInside = false
+  })
+}
+
+/* ================= 外部 modelValue → 内部 ================= */
+watch(
+  () => props.modelValue,
+  val => {
+    if (syncingFromInside) return
+    const chars = val.replace(/\D/g, '').slice(0, len).split('')
+    values.value = Array.from({ length: len }, (_, i) => chars[i] ?? '')
+  },
+  { immediate: true }
+)
+
+/* ================= 输入（插入式，整体右移） ================= */
 function onInput(e: Event, index: number) {
   const input = e.target as HTMLInputElement
-  const v = input.value.replace(/\D/g, '')
+  const digit = input.value.replace(/\D/g, '').slice(-1)
 
-  values.value[index] = v.slice(-1) || ''
+  input.value = ''
+  if (!digit) return
+
+  for (let i = len - 1; i > index; i--) {
+    values.value[i] = values.value[i - 1]
+  }
+
+  values.value[index] = digit
   syncValue()
 
-  // 自动跳到下一个（只影响 focus，不影响值）
-  if (v && index < len - 1) {
-    nextTick(() => inputs.value[index + 1]?.focus())
-  }
+  nextTick(() => {
+    inputs.value[Math.min(index + 1, len - 1)]?.focus()
+  })
 }
 
-// 退格逻辑
+/* ================= 删除（整体左移） ================= */
 function onKeydown(e: KeyboardEvent, index: number) {
-  if (e.key === 'Backspace') {
-    if (values.value[index]) {
-      values.value[index] = ''
-      syncValue()
-    } else if (index > 0) {
-      nextTick(() => inputs.value[index - 1]?.focus())
-    }
+  if (e.key !== 'Backspace') return
+  e.preventDefault()
+
+  for (let i = index; i < len - 1; i++) {
+    values.value[i] = values.value[i + 1]
   }
+  values.value[len - 1] = ''
+
+  syncValue()
+
+  nextTick(() => {
+    inputs.value[Math.max(index - 1, 0)]?.focus()
+  })
 }
 
-// 点击聚焦
-function focusIndex(index: number) {
-  nextTick(() => inputs.value[index]?.focus())
-}
-
-// 👉 对外暴露一个 reset 方法（供 newRound 使用）
+/* ================= 重置 ================= */
 function reset() {
   values.value = Array(len).fill('')
   emit('update:modelValue', '')
@@ -65,21 +91,49 @@ defineExpose({ reset })
 
 <template>
   <div class="tournament-input">
+    <!-- 前 3 位 -->
     <div class="digits">
       <input
-        v-for="(_, i) in values"
-        :key="i"
-        ref="inputs"
+        v-for="i in 3"
+        :key="i - 1"
+        :ref="el => setInputRef(el, i - 1)"
         class="digit"
         inputmode="numeric"
-        maxlength="1"
-        :value="values[i]"
-        @input="onInput($event, i)"
-        @keydown="onKeydown($event, i)"
-        @click="focusIndex(i)"
+        :value="values[i - 1]"
+        @input="onInput($event, i - 1)"
+        @keydown="onKeydown($event, i - 1)"
       />
     </div>
-    <span class="suffix">,00</span>
+
+    <span class="comma">,</span>
+
+    <!-- 中间 3 位 -->
+    <div class="digits">
+      <input
+        v-for="i in 3"
+        :key="i + 2"
+        :ref="el => setInputRef(el, i + 2)"
+        class="digit"
+        inputmode="numeric"
+        :value="values[i + 2]"
+        @input="onInput($event, i + 2)"
+        @keydown="onKeydown($event, i + 2)"
+      />
+    </div>
+
+    <span class="comma">,</span>
+
+    <!-- 最后一位 -->
+    <input
+      :ref="el => setInputRef(el, 6)"
+      class="digit"
+      inputmode="numeric"
+      :value="values[6]"
+      @input="onInput($event, 6)"
+      @keydown="onKeydown($event, 6)"
+    />
+
+    <span class="suffix">00</span>
   </div>
 </template>
 
@@ -87,7 +141,7 @@ defineExpose({ reset })
 .tournament-input {
   display: flex;
   align-items: flex-end;
-  gap: 10px;
+  gap: 8px;
 }
 
 .digits {
@@ -111,6 +165,12 @@ defineExpose({ reset })
 .digit:focus {
   border-color: #2563eb;
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+}
+
+.comma {
+  font-size: 32px;
+  font-weight: 700;
+  padding-bottom: 8px;
 }
 
 .suffix {
