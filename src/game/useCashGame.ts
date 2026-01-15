@@ -10,9 +10,12 @@ import {
  */
 export type CashColor = 'white' | 'red' | 'green' | 'black'
 
+/**
+ * Cash Game Config
+ * 已删除所有 range 相关配置
+ */
 export interface CashGameConfig {
   enabledColors: CashColor[]
-  whiteRange: '1-20' | '20-60'
 }
 
 export function useCashGame(config: CashGameConfig) {
@@ -24,10 +27,8 @@ export function useCashGame(config: CashGameConfig) {
 
     /* ========== 白色筹码（1）========== */
     if (colors.includes('white')) {
-      const whiteCount =
-        config.whiteRange === '1-20'
-          ? Math.floor(Math.random() * 20) + 1
-          : Math.floor(Math.random() * 41) + 20
+      // 白色统一规则：1–40
+      const whiteCount = Math.floor(Math.random() * 40) + 1
 
       splitWhiteStacks(whiteCount).forEach((c) => {
         groups.push({ color: 'white', count: c })
@@ -40,6 +41,7 @@ export function useCashGame(config: CashGameConfig) {
     if (colors.includes('red')) {
       const redCount = Math.floor(Math.random() * 100)
 
+      // 红色拆分规则保持你原来的逻辑
       const choice = Math.random() < 0.5 ? 4 : 5
 
       splitRedStacks(redCount, choice).forEach((c) => {
@@ -62,7 +64,7 @@ export function useCashGame(config: CashGameConfig) {
 
     /* ========== 黑色筹码（100）========== */
     if (colors.includes('black')) {
-      // 黑色固定 1–40
+      // 黑色统一规则：1–40
       const blackCount = Math.floor(Math.random() * 40) + 1
 
       let remaining = blackCount
@@ -77,7 +79,7 @@ export function useCashGame(config: CashGameConfig) {
       total += blackCount * CHIP_TYPES.black.value
     }
 
-    /* ========== 排序（从大到小更符合现金桌直觉）========== */
+    /* ========== 排序（现金桌：大 → 小）========== */
     const ORDER: CashColor[] = ['black', 'green', 'red', 'white']
 
     groups.sort(

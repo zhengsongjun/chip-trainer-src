@@ -53,21 +53,6 @@ const emit = defineEmits<{
           </el-space>
         </el-checkbox-group>
       </el-form-item>
-
-      <el-form-item
-        v-if="enabledColors.includes('white')"
-        label="白色筹码数量"
-      >
-        <el-radio-group
-          :model-value="whiteRange"
-          @update:model-value="emit('update:whiteRange', $event)"
-        >
-          <el-space size="large">
-            <el-radio label="1-20">1–20 个白色</el-radio>
-            <el-radio label="20-60">20–60 个白色</el-radio>
-          </el-space>
-        </el-radio-group>
-      </el-form-item>
     </template>
 
     <!-- ========== 锦标赛配置 ========== -->
@@ -85,21 +70,6 @@ const emit = defineEmits<{
             <el-checkbox label="black100">黑色（100）</el-checkbox>
           </el-space>
         </el-checkbox-group>
-      </el-form-item>
-
-      <el-form-item
-        v-if="tournamentColors.includes('black100')"
-        label="黑色筹码数量"
-      >
-        <el-radio-group
-          :model-value="blackRange"
-          @update:model-value="emit('update:blackRange', $event)"
-        >
-          <el-space size="large">
-            <el-radio label="1-19">1–19 个黑色</el-radio>
-            <el-radio label="20-60">20–60 个黑色</el-radio>
-          </el-space>
-        </el-radio-group>
       </el-form-item>
     </template>
   </el-form>

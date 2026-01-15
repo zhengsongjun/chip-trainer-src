@@ -1,21 +1,16 @@
 <script setup lang="ts">
-import { ref,computed } from 'vue'
-import ChipStack from '@/components/ChipStack.vue'
+import { ref,computed ,watch} from 'vue'
 import GameConfigPanel from '@/components/GameConfigPanel.vue'
 import { useCashGame } from '@/game/useCashGame'
 import { useTournamentGame } from '@/game/useTournamentGame'
-import AnswerPanel from '@/components/AnswerPanel.vue'
 import ChipBoard from '@/components/ChipBoard.vue'
 import AnswerActions from '@/components/AnswerActions.vue'
 import TournamentAnswerInput from "@/components/TournamentAnswerInput.vue"
-interface GameEngine {
-  generate(): {
-    groups: { color: string; count: number }[]
-    total: number
-  }
-}
 
 /* ================= 状态 ================= */
+const tournamentInputRef =
+  ref<InstanceType<typeof TournamentAnswerInput> | null>(null)
+
 
 const round = ref(0)
 const chipGroups = ref([])
@@ -30,15 +25,12 @@ const tournamentColors = ref<string[]>([
   'green25k',
 ])
 
-const blackRange = ref<'1-19' | '20-60'>('1-19')
 
 
 // Element Plus 颜色选择（默认全选）
 const enabledColors = ref(['green', 'red', 'white','black'])
 const gameType = ref<'cash' | 'tournament'>('cash')
 
-// 白色数量区间
-const whiteRange = ref('1-20')
 const showAnswer = ref(false)
 
 
@@ -49,14 +41,32 @@ function newRound() {
   const { groups, total } = gameEngine.value.generate()
   chipGroups.value = groups
   correctValue.value = total
+  showAnswer.value = false
 }
 
 
 function onSubmit() {
   const val = Number(userInput.value)
-  feedback.value = val === correctValue.value ? 'correct' : 'wrong'
-  if (feedback.value === 'correct') setTimeout(newRound, 700)
+
+  const isCorrect = val === correctValue.value
+  feedback.value = isCorrect ? 'correct' : 'wrong'
+
+  // 提交后清空输入（不管对错）
+  if (gameType.value === 'tournament') {
+    tournamentInputRef.value?.reset()
+  } else {
+    userInput.value = ''
+  }
+
+  // ✅ 只有“答对”才自动换题
+  if (isCorrect) {
+    setTimeout(() => {
+      newRound()
+    }, 700) // 这个延迟你可以按体验调
+  }
 }
+
+
 
 function toggleShowAnswer() {
   showAnswer.value = !showAnswer.value
@@ -66,15 +76,15 @@ const gameEngine = computed(() => {
   if (gameType.value === 'tournament') {
     return useTournamentGame({
       colors: tournamentColors.value,
-      blackRange: blackRange.value,
     })
   }
 
   return useCashGame({
     enabledColors: enabledColors.value,
-    whiteRange: whiteRange.value,
   })
 })
+
+
 
 
 newRound()
@@ -116,6 +126,7 @@ newRound()
 
 <section v-if="gameType === 'tournament'" class="answer">
   <TournamentAnswerInput
+    ref="tournamentInputRef"
     v-model="userInput"
     :length="7"
   />
