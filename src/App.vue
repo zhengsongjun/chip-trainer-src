@@ -1,86 +1,16 @@
-<script setup>
-import { ref } from 'vue'
+<script setup lang="ts">
+import { ref,computed } from 'vue'
 import ChipStack from '@/components/ChipStack.vue'
-
-/**
- * 筹码定义
- */
-const CHIP_TYPES = {
-  red: { value: 5 },
-  green: { value: 25 },
-  white: { value: 1 },
-  black: { value: 100 },
-}
-
-/**
- * 红色分组
- */
-function splitRedStacks(count, choice) {
-  const result = []
-  let remaining = count
-
-  while (remaining >= 20) {
-    result.push(20)
-    remaining -= 20
+import GameConfigPanel from '@/components/GameConfigPanel.vue'
+import { useCashGame } from '@/game/useCashGame'
+import { useTournamentGame } from '@/game/useTournamentGame'
+import AnswerPanel from '@/components/AnswerPanel.vue'
+import ChipBoard from '@/components/ChipBoard.vue'
+interface GameEngine {
+  generate(): {
+    groups: { color: string; count: number }[]
+    total: number
   }
-
-  while (remaining > 5) {
-    if (remaining >= choice) {
-      result.push(choice)
-      remaining -= choice
-    }
-  }
-
-  if (remaining > 0) result.push(remaining)
-  return result
-}
-
-/**
- * 绿色分组
- */
-function splitGreenStacks(count) {
-  const result = []
-  let remaining = count
-
-  while (remaining >= 20) {
-    result.push(20)
-    remaining -= 20
-  }
-
-  if (remaining > 0) {
-    if (remaining === 6) result.push(4, 2)
-    else if (remaining === 7) result.push(4, 3)
-    else {
-      while (remaining >= 4) {
-        result.push(4)
-        remaining -= 4
-      }
-      if (remaining > 0) result.push(remaining)
-    }
-  }
-
-  return result
-}
-
-/**
- * 白色分组（20 / 5 / remainder）
- */
-function splitWhiteStacks(count) {
-  const result = []
-  let remaining = count
-
-  while (remaining >= 20) {
-    result.push(20)
-    remaining -= 20
-  }
-
-  while (remaining >= 5) {
-    result.push(5)
-    remaining -= 5
-  }
-
-  if (remaining > 0) result.push(remaining)
-  return result
 }
 
 /* ================= 状态 ================= */
@@ -88,97 +18,37 @@ function splitWhiteStacks(count) {
 const round = ref(0)
 const chipGroups = ref([])
 const correctValue = ref(0)
-
 const userInput = ref('')
 const feedback = ref('idle')
+const tournamentColors = ref<string[]>([
+  'black100',
+  'purple500',
+  'yellow1k',
+  'red5k',
+  'green25k',
+])
+
+const blackRange = ref<'1-19' | '20-60'>('1-19')
+
 
 // Element Plus 颜色选择（默认全选）
-const enabledColors = ref(['green', 'red', 'white'])
-const gameType = ref(['cash', 'tournament'])
+const enabledColors = ref(['green', 'red', 'white','black'])
+const gameType = ref<'cash' | 'tournament'>('cash')
 
 // 白色数量区间
 const whiteRange = ref('1-20')
 const showAnswer = ref(false)
 
-function getEnabledColors() {
-  return enabledColors.value
-}
-
-/* ================= 出题逻辑 ================= */
-
-function generateChips() {
-  const colors = enabledColors.value
-  const groups = []
-
-  let total = 0
-
-  // ===== 白色（必出现）=====
-  let whiteCount = 0
-  if (colors.includes('white')) {
-    whiteCount =
-      whiteRange.value === '1-20'
-        ? Math.floor(Math.random() * 20) + 1
-        : Math.floor(Math.random() * 41) + 20
-
-    splitWhiteStacks(whiteCount).forEach((c) => {
-      groups.push({ color: 'white', count: c })
-    })
-
-    total += whiteCount * CHIP_TYPES.white.value
-  }
-
-  // ===== 红 / 绿（至少 1 组）=====
-  let redCount = 0
-  let greenCount = 0
-
-  if (colors.includes('red') || colors.includes('green')) {
-    redCount = Math.floor(Math.random() * 100)
-
-    if (colors.includes('green')) {
-      // 至少 1 个绿
-      greenCount = Math.floor(Math.random() * 50)
-    }
-
-    if (colors.includes('green') && greenCount > 0) {
-      splitGreenStacks(greenCount).forEach((c) => {
-        groups.push({ color: 'green', count: c })
-      })
-      total += greenCount * CHIP_TYPES.green.value
-    }
-
-    let choice = Math.random() < 0.5 ? 4 : 5
-    if (colors.includes('red') && redCount > 0) {
-      splitRedStacks(redCount, choice).forEach((c) => {
-        groups.push({ color: 'red', count: c })
-      })
-      total += redCount * CHIP_TYPES.red.value
-    }
-  }
-
-  const order = {
-    green: 0,
-    red: 1,
-    white: 2,
-  }
-
-  groups.sort((a, b) => order[a.color] - order[b.color])
-
-  return {
-    groups,
-    total,
-  }
-}
-
-/* ================= 交互 ================= */
 
 function newRound() {
   round.value++
   userInput.value = ''
   feedback.value = 'idle'
-  const { groups, total } = generateChips()
+  const { groups, total } = gameEngine.value.generate()
   chipGroups.value = groups
   correctValue.value = total
 }
+
 
 function onSubmit() {
   const val = Number(userInput.value)
@@ -190,6 +60,21 @@ function toggleShowAnswer() {
   showAnswer.value = !showAnswer.value
 }
 
+const gameEngine = computed(() => {
+  if (gameType.value === 'tournament') {
+    return useTournamentGame({
+      colors: tournamentColors.value,
+      blackRange: blackRange.value,
+    })
+  }
+
+  return useCashGame({
+    enabledColors: enabledColors.value,
+    whiteRange: whiteRange.value,
+  })
+})
+
+
 newRound()
 </script>
 
@@ -198,64 +83,25 @@ newRound()
     <header class="topbar">
       <h1>筹码反应训练</h1>
     </header>
-
-    <!-- 配置区 -->
-    <el-form label-position="top" class="filters">
-      <el-form-item label="游戏类型">
-        <el-radio-group v-model="gameType">
-          <el-radio label="cash">现金桌</el-radio>
-          <el-radio label="tournament">锦标赛</el-radio>
-        </el-radio-group>
-      </el-form-item>
-      <el-form-item label="筹码颜色">
-        <el-checkbox-group v-model="enabledColors">
-          <el-space size="large">
-            <el-checkbox label="green">绿色</el-checkbox>
-            <el-checkbox label="red">红色</el-checkbox>
-            <el-checkbox label="white">白色</el-checkbox>
-          </el-space>
-        </el-checkbox-group>
-      </el-form-item>
-
-      <el-form-item v-if="enabledColors.includes('white')" label="白色筹码数量">
-        <el-radio-group v-model="whiteRange">
-          <el-space size="large">
-            <el-radio label="1-20">1–20 个白色</el-radio>
-            <el-radio label="20-60">20–60 个白色</el-radio>
-          </el-space>
-        </el-radio-group>
-      </el-form-item>
-    </el-form>
-
-    <!-- 筹码展示 -->
-    <section class="board">
-      <div class="stacks">
-        <div v-for="(group, idx) in chipGroups" :key="`${round}-${idx}`" class="stack">
-          <ChipStack :color="group.color" :count="group.count" :size="72" :spacing="10" />
-        </div>
-      </div>
-    </section>
-
+    <GameConfigPanel
+      v-model:gameType="gameType"
+      v-model:enabledColors="enabledColors"
+      v-model:whiteRange="whiteRange"
+      v-model:tournamentColors="tournamentColors"
+      v-model:blackRange="blackRange"
+    />
+    <ChipBoard :groups="chipGroups" />
     <!-- 答题 -->
-    <section class="answer">
-      <input
-        v-model="userInput"
-        type="number"
-        placeholder="请输入总数值"
-        @keyup.enter="onSubmit"
-        :class="feedback"
-      />
+    <AnswerPanel
+      v-model="userInput"
+      :feedback="feedback"
+      :correctValue="correctValue"
+      :showAnswer="showAnswer"
+      @submit="onSubmit"
+      @next="newRound"
+      @toggleAnswer="toggleShowAnswer"
+    />
 
-      <div class="actions">
-        <button @click="onSubmit">提交</button>
-        <button @click="newRound">换一题</button>
-        <button @click="toggleShowAnswer">显示答案</button>
-      </div>
-
-      <p v-if="feedback === 'correct'" class="ok">正确！</p>
-      <p v-else-if="feedback === 'wrong'" class="err">不对哦～</p>
-      <p v-if="showAnswer">答案是: {{ correctValue }}</p>
-    </section>
   </main>
 </template>
 
@@ -272,22 +118,6 @@ input[type='number']::-webkit-inner-spin-button {
   padding: 16px;
 }
 
-.board {
-  margin: 16px 0;
-}
-
-.stacks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: flex-end;
-}
-
-.stack {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
 
 .answer {
   margin-top: 16px;
