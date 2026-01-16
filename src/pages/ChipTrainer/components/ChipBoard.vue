@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import ChipStack from './ChipStack.vue'
   interface ChipGroup {
     color: string
     count: number
