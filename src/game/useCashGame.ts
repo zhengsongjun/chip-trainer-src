@@ -82,13 +82,26 @@ export function useCashGame(config: CashGameConfig) {
       if (blackCount > 0) {
         let remaining = blackCount
 
-        while (remaining >= 20) {
+        // 先按 20 个一组
+        while (remaining > 20) {
           groups.push({ color: 'black', count: 20 })
           remaining -= 20
         }
 
-        if (remaining > 0) {
-          groups.push({ color: 'black', count: remaining })
+        // 剩余刚好 20 → 一整组
+        if (remaining === 20) {
+          groups.push({ color: 'black', count: 20 })
+        }
+        // 剩余小于 20 → 按 5 个一组
+        else if (remaining > 0) {
+          while (remaining > 5) {
+            groups.push({ color: 'black', count: 5 })
+            remaining -= 5
+          }
+
+          if (remaining > 0) {
+            groups.push({ color: 'black', count: remaining })
+          }
         }
 
         total += blackCount * CHIP_TYPES.black.value

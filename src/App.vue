@@ -77,6 +77,22 @@
     newRound()
   })
 
+  /* ================= 颜色切换 → 切题 ================= */
+  watch(
+    [enabledColors, tournamentColors],
+    () => {
+      userInput.value = ''
+      feedback.value = 'idle'
+
+      if (gameType.value === 'tournament') {
+        tournamentInputRef.value?.reset()
+      }
+
+      newRound()
+    },
+    { deep: true }
+  )
+
   function onSubmit() {
     const val = Number(userInput.value)
 

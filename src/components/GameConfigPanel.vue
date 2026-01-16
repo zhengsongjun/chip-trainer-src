@@ -1,38 +1,35 @@
 <script setup lang="ts">
-defineProps<{
-  gameType: 'cash' | 'tournament'
+  defineProps<{
+    gameType: 'cash' | 'tournament'
 
-  /* cash */
-  enabledColors: string[]
-  whiteRange: '1-20' | '20-60'
+    /* cash */
+    enabledColors: string[]
+    whiteRange: '1-20' | '20-60'
 
-  /* tournament */
-  tournamentColors: string[]
-  blackRange: '1-19' | '20-60'
-}>()
+    /* tournament */
+    tournamentColors: string[]
+    blackRange: '1-19' | '20-60'
+  }>()
 
-const emit = defineEmits<{
-  /* common */
-  (e: 'update:gameType', val: 'cash' | 'tournament'): void
+  const emit = defineEmits<{
+    /* common */
+    (e: 'update:gameType', val: 'cash' | 'tournament'): void
 
-  /* cash */
-  (e: 'update:enabledColors', val: string[]): void
-  (e: 'update:whiteRange', val: '1-20' | '20-60'): void
+    /* cash */
+    (e: 'update:enabledColors', val: string[]): void
+    (e: 'update:whiteRange', val: '1-20' | '20-60'): void
 
-  /* tournament */
-  (e: 'update:tournamentColors', val: string[]): void
-  (e: 'update:blackRange', val: '1-19' | '20-60'): void
-}>()
+    /* tournament */
+    (e: 'update:tournamentColors', val: string[]): void
+    (e: 'update:blackRange', val: '1-19' | '20-60'): void
+  }>()
 </script>
 
 <template>
   <el-form label-position="top" class="filters">
     <!-- 游戏类型 -->
     <el-form-item label="游戏类型">
-      <el-radio-group
-        :model-value="gameType"
-        @update:model-value="emit('update:gameType', $event)"
-      >
+      <el-radio-group :model-value="gameType" @update:model-value="emit('update:gameType', $event)">
         <el-radio label="cash">现金桌</el-radio>
         <el-radio label="tournament">锦标赛</el-radio>
       </el-radio-group>
@@ -46,7 +43,7 @@ const emit = defineEmits<{
           @update:model-value="emit('update:enabledColors', $event)"
         >
           <el-space size="large">
-            <el-checkbox label="black">黑色（1–40）</el-checkbox>
+            <el-checkbox label="black">黑色</el-checkbox>
             <el-checkbox label="green">绿色</el-checkbox>
             <el-checkbox label="red">红色</el-checkbox>
             <el-checkbox label="white">白色</el-checkbox>
@@ -76,7 +73,7 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.filters {
-  margin-bottom: 12px;
-}
+  .filters {
+    margin-bottom: 12px;
+  }
 </style>
