@@ -45,6 +45,16 @@ function newRound() {
 }
 
 
+//切换模式也要切题
+watch(gameType, (type) => {
+  userInput.value = ''
+  feedback.value = 'idle'
+  if (type === 'tournament') {
+    tournamentInputRef.value?.reset()
+  }
+  newRound()
+})
+
 function onSubmit() {
   const val = Number(userInput.value)
 
