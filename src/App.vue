@@ -79,7 +79,11 @@
 
   function onSubmit() {
     const val = Number(userInput.value)
-    const isCorrect = val === correctValue.value
+
+    const isCorrect =
+      gameType.value === 'tournament'
+        ? val * 100 === correctValue.value
+        : val === correctValue.value
 
     feedback.value = isCorrect ? 'correct' : 'wrong'
 
@@ -90,7 +94,9 @@
     }
 
     if (isCorrect) {
-      setTimeout(newRound, 700)
+      setTimeout(() => {
+        newRound()
+      }, 700)
     }
   }
 
