@@ -49,6 +49,17 @@ const tournamentChipLimits = ref({
 
 function saveChipConfig() {
   showChipConfig.value = false
+  showChipConfig.value = false
+
+  // 保存配置后，切换到新规则题目
+  userInput.value = ''
+  feedback.value = 'idle'
+
+  if (gameType.value === 'tournament') {
+      tournamentInputRef.value?.reset()
+  }
+
+  newRound()
 }
 
 /* ================= 出题 ================= */
@@ -72,6 +83,8 @@ watch(gameType, (type) => {
   }
   newRound()
 })
+
+
 
 function onSubmit() {
   const val = Number(userInput.value)
