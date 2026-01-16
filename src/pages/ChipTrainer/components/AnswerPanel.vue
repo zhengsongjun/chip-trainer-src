@@ -1,17 +1,17 @@
 <script setup lang="ts">
-defineProps<{
-  modelValue: string
-  feedback: 'idle' | 'correct' | 'wrong'
-  correctValue: number
-  showAnswer: boolean
-}>()
+  defineProps<{
+    modelValue: string
+    feedback: 'idle' | 'correct' | 'wrong'
+    correctValue: number
+    showAnswer: boolean
+  }>()
 
-const emit = defineEmits<{
-  (e: 'update:modelValue', val: string): void
-  (e: 'submit'): void
-  (e: 'next'): void
-  (e: 'toggleAnswer'): void
-}>()
+  const emit = defineEmits<{
+    (e: 'update:modelValue', val: string): void
+    (e: 'submit'): void
+    (e: 'next'): void
+    (e: 'toggleAnswer'): void
+  }>()
 </script>
 
 <template>
@@ -39,35 +39,35 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.answer {
-  margin-top: 16px;
-  display: grid;
-  gap: 10px;
-}
+  .answer {
+    margin-top: 16px;
+    display: grid;
+    gap: 10px;
+  }
 
-input {
-  padding: 10px;
-  font-size: 16px;
-}
+  input {
+    padding: 10px;
+    font-size: 16px;
+  }
 
-input.correct {
-  border: 1px solid #16a34a;
-}
+  input.correct {
+    border: 1px solid #16a34a;
+  }
 
-input.wrong {
-  border: 1px solid #dc2626;
-}
+  input.wrong {
+    border: 1px solid #dc2626;
+  }
 
-.actions {
-  display: flex;
-  gap: 8px;
-}
+  .actions {
+    display: flex;
+    gap: 8px;
+  }
 
-.ok {
-  color: #16a34a;
-}
+  .ok {
+    color: #16a34a;
+  }
 
-.err {
-  color: #dc2626;
-}
+  .err {
+    color: #dc2626;
+  }
 </style>

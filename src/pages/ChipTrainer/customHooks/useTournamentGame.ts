@@ -1,5 +1,5 @@
-import { splitTournamentStacks } from './chipUtils'
-import { TOURNAMENT_CHIPS, TournamentColor } from './tournamentConfig'
+import { splitTournamentStacks } from '../utils/chipUtils'
+import { TOURNAMENT_CHIPS, TournamentColor } from '../utils/tournamentConfig'
 
 /**
  * 锦标赛筹码上限配置
@@ -50,12 +50,12 @@ export function useTournamentGame(config: TournamentGameConfig) {
         color === 'green25k'
           ? 'green25'
           : color === 'black100'
-          ? 'black100'
-          : color === 'purple500'
-          ? 'purple500'
-          : color === 'yellow1k'
-          ? 'gold1000'
-          : 'red5000'
+            ? 'black100'
+            : color === 'purple500'
+              ? 'purple500'
+              : color === 'yellow1k'
+                ? 'gold1000'
+                : 'red5000'
 
       const max = config.limits[limitKey]
       const count = randomCount(max)

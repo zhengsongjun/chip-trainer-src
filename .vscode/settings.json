@@ -1,0 +1,24 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+  "[vue]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "vue.server.path": "./node_modules/@vue/language-server",
+  "eslint.validate": ["vue", "javascript", "typescript"],
+  "volar.takeoverMode.enabled": true,
+  "volar.completion.autoImportComponent": true,
+  "volar.autoComplete.refs": true,
+
+  // 如果有 Vetur，确保禁用
+  "vetur.enable": false,
+  "vetur.validation.template": false
+}

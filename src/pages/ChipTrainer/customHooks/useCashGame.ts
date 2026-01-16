@@ -1,4 +1,4 @@
-import { CHIP_TYPES, splitRedStacks, splitGreenStacks, splitWhiteStacks } from './chipUtils'
+import { CHIP_TYPES, splitGreenStacks, splitRedStacks, splitWhiteStacks } from '../utils/chipUtils'
 
 /**
  * 现金桌颜色类型

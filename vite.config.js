@@ -13,28 +13,31 @@ export default defineConfig({
     svgLoader({
       svgo: true,
       svgoConfig: {
-        plugin: [{
-          name: 'removeDimensions',
-          active: true
-        }, {
-          name: 'prefixIds',
-          params: {
-            prefix: (_node, {path: filePath}) =>
-              path.basename(filePath, '.svg') + '-'
+        plugin: [
+          {
+            name: 'removeDimensions',
+            active: true,
           },
-          active: true
-        }, {
-          name: 'removeViewBox',
-          active: false
-        } ]
-      }
+          {
+            name: 'prefixIds',
+            params: {
+              prefix: (_node, { path: filePath }) => path.basename(filePath, '.svg') + '-',
+            },
+            active: true,
+          },
+          {
+            name: 'removeViewBox',
+            active: false,
+          },
+        ],
+      },
     }),
     vueJsx(),
     vueDevTools(),
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
   base: '/chip-trainer/',
