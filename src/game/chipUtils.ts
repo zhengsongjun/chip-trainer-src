@@ -103,8 +103,7 @@ export function splitTournamentStacks(
       result.push(smallGroupSize)
       remaining -= smallGroupSize
     }
-  
-    if (remaining > 0) {
+  if (remaining > 0) {
       result.push(remaining)
     }
   
