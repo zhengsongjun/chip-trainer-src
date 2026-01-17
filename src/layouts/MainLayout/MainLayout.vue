@@ -1,11 +1,16 @@
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { ref, computed, onMounted } from 'vue'
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { ElConfigProvider } from 'element-plus'
+  import { ElConfigProvider, ElMessage } from 'element-plus'
+  import { ArrowDown } from '@element-plus/icons-vue'
 
   import zhCn from 'element-plus/es/locale/lang/zh-cn'
   import enUs from 'element-plus/es/locale/lang/en'
+
+  import { onAuthStateChanged } from 'firebase/auth'
+  import { auth } from '@/firebase'
+  import { logout } from '@/services/auth'
 
   /* ================= router ================= */
   const router = useRouter()
@@ -14,28 +19,35 @@
     router.push('/chip-trainer')
   }
 
-  function onLogin() {
-    console.log('login')
+  function goLogin() {
+    router.push('/login')
+  }
+
+  /* ================= auth ================= */
+  const userEmail = ref<string | null>(null)
+
+  onMounted(() => {
+    onAuthStateChanged(auth, (user) => {
+      userEmail.value = user ? user.email : null
+    })
+  })
+
+  async function handleLogout() {
+    await logout()
+    ElMessage.success('已退出登录')
+    router.push('/login')
   }
 
   /* ================= i18n ================= */
   const { locale, t } = useI18n()
 
-  /**
-   * 以后你可以把 locale 改成：
-   * - pinia 里的用户配置
-   * - localStorage
-   * 这里不用动 template
-   */
-
-  /* ================= Element Plus locale 映射 ================= */
+  /* ================= Element Plus locale ================= */
   const elementLocale = computed(() => {
     return locale.value === 'en-US' ? enUs : zhCn
   })
 </script>
 
 <template>
-  <!-- ⚠️ 关键：用 el-config-provider 包住整个系统 -->
   <el-config-provider :locale="elementLocale">
     <div class="layout">
       <!-- ================= Header ================= -->
@@ -45,15 +57,41 @@
         </div>
 
         <div class="header-right">
-          <!-- 语言切换：直接驱动 i18n.locale -->
+          <!-- 语言切换 -->
           <el-select v-model="locale" size="small" class="locale-select">
-            <el-option label="简体中文" value="zh-CN"></el-option>
-            <el-option label="English" value="en-US"></el-option>
+            <el-option label="简体中文" value="zh-CN" />
+            <el-option label="English" value="en-US" />
           </el-select>
 
-          <el-button type="primary" size="small" @click="onLogin">
-            {{ t('common.login') }}
-          </el-button>
+          <!-- ================= Auth Area ================= -->
+          <div class="auth-area">
+            <!-- 未登录 -->
+            <el-button v-if="!userEmail" type="primary" size="small" @click="goLogin">
+              {{ t('common.login') }}
+            </el-button>
+
+            <!-- 已登录 -->
+            <el-dropdown v-else trigger="hover">
+              <span class="user-trigger">
+                <el-avatar size="small" class="avatar">
+                  {{ userEmail.charAt(0).toUpperCase() }}
+                </el-avatar>
+                <span class="email">{{ userEmail }}</span>
+                <el-icon>
+                  <ArrowDown />
+                </el-icon>
+              </span>
+
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item disabled>
+                    {{ userEmail }}
+                  </el-dropdown-item>
+                  <el-dropdown-item divided @click="handleLogout"> 退出登录 </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
         </div>
       </header>
 
@@ -68,7 +106,7 @@
         </aside>
 
         <main class="content">
-          <router-view></router-view>
+          <router-view />
         </main>
       </div>
     </div>
@@ -89,7 +127,6 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-
     padding: 0 16px;
     background-color: var(--el-bg-color);
     border-bottom: 1px solid var(--el-border-color-light);
@@ -115,6 +152,38 @@
     width: 110px;
   }
 
+  /* ================= Auth ================= */
+  .auth-area {
+    display: flex;
+    align-items: center;
+  }
+
+  .user-trigger {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    color: var(--el-text-color-primary);
+  }
+
+  .user-trigger:hover {
+    color: var(--el-color-primary);
+  }
+
+  .avatar {
+    background-color: var(--el-color-primary);
+    color: #fff;
+    font-size: 12px;
+  }
+
+  .email {
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+  }
+
   /* ================= Main ================= */
   .main {
     flex: 1;
@@ -122,7 +191,6 @@
     min-height: 0;
   }
 
-  /* ================= Sidebar ================= */
   .sidebar {
     width: 200px;
     background-color: var(--el-bg-color);
