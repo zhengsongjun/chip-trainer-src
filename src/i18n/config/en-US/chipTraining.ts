@@ -1,6 +1,6 @@
 export default {
   appTitle: "Texas Hold'em",
-  pageTitle: 'Chip Reaction Training',
+  pageTitle: 'Chip Count Training',
 
   chipConfig: 'Chip Configuration',
   chipLimitConfig: 'Chip Limit Configuration',
