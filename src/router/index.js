@@ -13,6 +13,11 @@ const router = createRouter({
       component: Login,
     },
     {
+      path: '/profile',
+      name: 'Profile',
+      component: () => import('@/pages/Profile/Index.vue'),
+    },
+    {
       path: '/chip-trainer',
       component: MainLayout,
       meta: { requiresAuth: true },

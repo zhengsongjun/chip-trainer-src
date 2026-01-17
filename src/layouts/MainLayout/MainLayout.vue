@@ -15,6 +15,10 @@
   /* ================= router ================= */
   const router = useRouter()
 
+  function goProfile() {
+    router.push('/profile')
+  }
+
   function goHome() {
     router.push('/chip-trainer')
   }
@@ -87,6 +91,7 @@
                   <el-dropdown-item disabled>
                     {{ userEmail }}
                   </el-dropdown-item>
+                  <el-dropdown-item @click="goProfile"> 个人中心 </el-dropdown-item>
                   <el-dropdown-item divided @click="handleLogout"> 退出登录 </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
