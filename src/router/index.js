@@ -18,6 +18,11 @@ const router = createRouter({
       component: () => import('@/pages/Profile/Index.vue'),
     },
     {
+      path: '/activation',
+      name: 'Activation',
+      component: () => import('@/pages/Activation/Index.vue'),
+    },
+    {
       path: '/chip-trainer',
       component: MainLayout,
       meta: { requiresAuth: true },
