@@ -13,6 +13,16 @@ const router = createRouter({
       component: Login,
     },
     {
+      path: '/profile',
+      name: 'Profile',
+      component: () => import('@/pages/Profile/Index.vue'),
+    },
+    {
+      path: '/activation',
+      name: 'Activation',
+      component: () => import('@/pages/Activation/Index.vue'),
+    },
+    {
       path: '/chip-trainer',
       component: MainLayout,
       meta: { requiresAuth: true },

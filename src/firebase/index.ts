@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
+import { getFirestore } from 'firebase/firestore'
 
 const firebaseConfig = {
   apiKey: 'AIzaSyApKIQ66DzjYrs3DxknQLoHJ5r0YnWU7xg',
@@ -14,3 +15,5 @@ const app = initializeApp(firebaseConfig)
 
 // Firebase Auth（我们后面所有登录都用它）
 export const auth = getAuth(app)
+
+export const db = getFirestore(app)
