@@ -1,0 +1,36 @@
+/* Dialog 内容区 */
+.ui-dialog-body {
+  padding: var(--space-4);
+}
+
+/* 配置区块 */
+.config-section {
+  margin-bottom: var(--space-5);
+}
+
+/* 区块标题 */
+.config-title {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  margin-bottom: var(--space-4);
+}
+
+/* 核心：配置网格 */
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4) var(--space-6);
+}
+
+/* 单项配置 */
+.config-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* 左侧 label */
+.config-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-700);
+}

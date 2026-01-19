@@ -1,0 +1,14 @@
+:root {
+  --font-family-base: Inter, system-ui, -apple-system, BlinkMacSystemFont;
+
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 20px;
+}
+
+body {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-900);
+}

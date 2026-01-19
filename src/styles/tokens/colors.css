@@ -1,0 +1,23 @@
+:root {
+  /* Background */
+  --color-bg-page: #f7f8fa;
+  --color-bg-container: #ffffff;
+
+  /* Gray */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-500: #6b7280;
+  --color-gray-700: #374151;
+  --color-gray-900: #111827;
+
+  /* Brand */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+
+  /* Status */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+}

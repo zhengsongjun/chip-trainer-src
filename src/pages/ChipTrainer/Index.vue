@@ -160,147 +160,206 @@
 </script>
 
 <template>
-  <!-- ========== 配置弹窗 ========== -->
-  <el-dialog v-model="showChipConfig" :title="chipConfig" width="520px">
-    <h3 class="config-title">{{ cashGame }}</h3>
+  <div class="ui-page">
+    <div class="ui-stage">
+      <div class="ui-stage chip-trainer">
+        <!-- 顶部：标题 + 配置（Panel） -->
+        <div class="ui-panel trainer-header">
+          <h1 class="page-title">{{ pageTitle }}</h1>
+          <el-button type="primary" @click="showChipConfig = true">
+            {{ chipLimitConfig }}
+          </el-button>
+        </div>
 
-    <el-form label-width="120px">
-      <el-form-item :label="`${white} (1)`">
-        <el-input-number v-model="cashChipLimits.white1" :min="0" :max="1000" />
-      </el-form-item>
-      <el-form-item :label="`${red} (5)`">
-        <el-input-number v-model="cashChipLimits.red5" :min="0" :max="1000" />
-      </el-form-item>
-      <el-form-item :label="`${green} (25)`">
-        <el-input-number v-model="cashChipLimits.green25" :min="0" :max="1000" />
-      </el-form-item>
-      <el-form-item :label="`${black} (100)`">
-        <el-input-number v-model="cashChipLimits.black100" :min="0" :max="1000" />
-      </el-form-item>
-    </el-form>
+        <!-- 游戏配置（控制面板） -->
+        <GameConfigPanel
+          v-model:gameType="gameType"
+          v-model:enabledColors="enabledColors"
+          v-model:tournamentColors="tournamentColors"
+        />
 
-    <el-divider />
+        <section class="chip-stage">
+          <ChipBoard :groups="chipGroups" />
+        </section>
 
-    <h3 class="config-title">{{ tournamentGame }}</h3>
-    <el-form label-width="120px">
-      <el-form-item :label="`${green} (25)`">
-        <el-input-number v-model="tournamentChipLimits.green25" :min="0" :max="1000" />
-      </el-form-item>
-      <el-form-item :label="`${black} (100)`"
-        ><el-input-number v-model="tournamentChipLimits.black100" :min="0" :max="1000" />
-      </el-form-item>
-      <el-form-item :label="`${purple} (500)`">
-        <el-input-number v-model="tournamentChipLimits.purple500" :min="0" :max="1000" />
-      </el-form-item>
-      <el-form-item :label="`${gold} (1000)`">
-        <el-input-number v-model="tournamentChipLimits.gold1000" :min="0" :max="1000" />
-      </el-form-item>
-      <el-form-item :label="`${red} (5000)`">
-        <el-input-number v-model="tournamentChipLimits.red5000" :min="0" :max="1000" />
-      </el-form-item>
-    </el-form>
+        <!-- 答题区（Panel） -->
+        <div class="ui-panel answer-panel">
+          <section v-if="gameType === 'cash'" class="answer">
+            <el-input
+              v-model="userInput"
+              :placeholder="inputPlaceholder"
+              size="large"
+              input-style="text-align: center; font-size: 20px;"
+              @keyup.enter="onSubmit"
+              :class="feedback"
+            />
 
+            <AnswerActions
+              :feedback="feedback as any"
+              :showAnswer="showAnswer"
+              :correctValue="correctValue"
+              @submit="onSubmit"
+              @next="newRound"
+              @toggleAnswer="toggleShowAnswer"
+            />
+          </section>
+
+          <section v-if="gameType === 'tournament'" class="answer">
+            <TournamentAnswerInput ref="tournamentInputRef" v-model="userInput" :length="7" />
+
+            <AnswerActions
+              :feedback="feedback as any"
+              :showAnswer="showAnswer"
+              :correctValue="correctValue"
+              @submit="onSubmit"
+              @next="newRound"
+              @toggleAnswer="toggleShowAnswer"
+            />
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+  <el-dialog v-model="showChipConfig" :title="chipConfig" width="640px" align-center>
+    <!-- Dialog 内容体 -->
+    <div class="ui-dialog-body">
+      <!-- ========== 现金赛配置 ========== -->
+      <section class="config-section">
+        <h3 class="config-title">{{ cashGame }}</h3>
+
+        <div class="config-grid">
+          <div class="config-item">
+            <span class="config-label">{{ white }} (1)</span>
+            <el-input-number v-model="cashChipLimits.white1" :min="0" :max="1000" />
+          </div>
+
+          <div class="config-item">
+            <span class="config-label">{{ red }} (5)</span>
+            <el-input-number v-model="cashChipLimits.red5" :min="0" :max="1000" />
+          </div>
+
+          <div class="config-item">
+            <span class="config-label">{{ green }} (25)</span>
+            <el-input-number v-model="cashChipLimits.green25" :min="0" :max="1000" />
+          </div>
+
+          <div class="config-item">
+            <span class="config-label">{{ black }} (100)</span>
+            <el-input-number v-model="cashChipLimits.black100" :min="0" :max="1000" />
+          </div>
+        </div>
+      </section>
+
+      <el-divider />
+
+      <!-- ========== 锦标赛配置 ========== -->
+      <section class="config-section">
+        <h3 class="config-title">{{ tournamentGame }}</h3>
+
+        <div class="config-grid">
+          <div class="config-item">
+            <span class="config-label">{{ green }} (25)</span>
+            <el-input-number v-model="tournamentChipLimits.green25" :min="0" :max="1000" />
+          </div>
+
+          <div class="config-item">
+            <span class="config-label">{{ black }} (100)</span>
+            <el-input-number v-model="tournamentChipLimits.black100" :min="0" :max="1000" />
+          </div>
+
+          <div class="config-item">
+            <span class="config-label">{{ purple }} (500)</span>
+            <el-input-number v-model="tournamentChipLimits.purple500" :min="0" :max="1000" />
+          </div>
+
+          <div class="config-item">
+            <span class="config-label">{{ gold }} (1000)</span>
+            <el-input-number v-model="tournamentChipLimits.gold1000" :min="0" :max="1000" />
+          </div>
+
+          <div class="config-item">
+            <span class="config-label">{{ red }} (5000)</span>
+            <el-input-number v-model="tournamentChipLimits.red5000" :min="0" :max="1000" />
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Footer -->
     <template #footer>
-      <el-button @click="showChipConfig = false">{{ cancel }}</el-button>
-      <el-button type="primary" @click="saveChipConfig">{{ save }}</el-button>
+      <el-button @click="showChipConfig = false">
+        {{ cancel }}
+      </el-button>
+      <el-button type="primary" @click="saveChipConfig">
+        {{ save }}
+      </el-button>
     </template>
   </el-dialog>
 
   <!-- ========== 主体 ========== -->
-  <main class="app">
-    <header class="topbar">
-      <h1>{{ pageTitle }}</h1>
-      <el-button type="primary" @click="showChipConfig = true">
-        {{ chipLimitConfig }}
-      </el-button>
-    </header>
-
-    <GameConfigPanel
-      v-model:gameType="gameType"
-      v-model:enabledColors="enabledColors"
-      v-model:tournamentColors="tournamentColors"
-    />
-
-    <ChipBoard :groups="chipGroups" />
-
-    <!-- 答题 -->
-    <section v-if="gameType === 'cash'" class="answer">
-      <el-input
-        v-model="userInput"
-        :placeholder="inputPlaceholder"
-        size="large"
-        input-style="text-align: center; font-size: 20px;"
-        @keyup.enter="onSubmit"
-        :class="feedback"
-      />
-
-      <AnswerActions
-        :feedback="feedback as any"
-        :showAnswer="showAnswer"
-        :correctValue="correctValue"
-        @submit="onSubmit"
-        @next="newRound"
-        @toggleAnswer="toggleShowAnswer"
-      />
-    </section>
-
-    <section v-if="gameType === 'tournament'" class="answer">
-      <TournamentAnswerInput ref="tournamentInputRef" v-model="userInput" :length="7" />
-
-      <AnswerActions
-        :feedback="feedback as any"
-        :showAnswer="showAnswer"
-        :correctValue="correctValue"
-        @submit="onSubmit"
-        @next="newRound"
-        @toggleAnswer="toggleShowAnswer"
-      />
-    </section>
-  </main>
+  <!-- ========== 主体 ========== -->
 </template>
 
 <style scoped>
-  .app {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 16px;
-  }
-
-  .topbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-  }
-
-  .answer {
-    margin-top: 16px;
-    display: grid;
-    gap: 10px;
-  }
-
-  .config-title {
-    margin: 4px 0 8px;
+  /* 页面标题 */
+  .page-title {
+    font-size: var(--font-size-lg);
     font-weight: 600;
   }
 
-  input.correct {
-    border: 1px solid #16a34a;
+  /* 顶部 Panel */
+  .trainer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
   }
 
-  input.wrong {
-    border: 1px solid #dc2626;
+  /* 答题区 Panel 内部 */
+  .answer-panel {
+    margin-top: var(--space-5);
   }
 
+  /* 答题结构 */
+  .answer {
+    display: grid;
+    gap: var(--space-3);
+    justify-items: center;
+  }
+
+  /* 输入框宽度控制 */
   .el-input {
-    max-width: 280px; /* 不要拉满，很重要 */
+    max-width: 280px;
   }
 
+  /* 正确 / 错误反馈（不写死颜色） */
   .el-input.correct .el-input__wrapper {
-    border-color: #16a34a;
+    border-color: var(--color-success);
   }
 
   .el-input.wrong .el-input__wrapper {
-    border-color: #dc2626;
+    border-color: var(--color-error);
+  }
+
+  /* 弹窗标题 */
+  .config-title {
+    margin: var(--space-1) 0 var(--space-2);
+    font-weight: 600;
+  }
+
+  .chip-stage {
+    margin: var(--space-6) 0;
+    padding: var(--space-6) var(--space-4);
+
+    /* 非卡片背景 */
+    background: rgba(255, 255, 255, 0.6);
+
+    /* 非卡片边界 */
+    border-radius: 16px;
+
+    /* 极弱托底阴影（关键） */
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.04),
+      0 12px 24px rgba(0, 0, 0, 0.08);
   }
 </style>

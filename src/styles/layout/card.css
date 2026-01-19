@@ -1,0 +1,6 @@
+.ui-card {
+  padding: var(--space-5);
+  background: var(--color-bg-container);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}

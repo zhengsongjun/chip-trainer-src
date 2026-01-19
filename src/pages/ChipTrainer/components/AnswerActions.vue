@@ -27,16 +27,18 @@
 <template>
   <div class="answer-actions">
     <!-- 操作区 -->
-    <div class="actions">
-      <div class="actions">
-        <el-button type="primary" :icon="Check" @click="emit('submit')"> {{ submit }} </el-button>
+    <div class="actions-row">
+      <el-button type="primary" :icon="Check" @click="emit('submit')">
+        {{ submit }}
+      </el-button>
 
-        <el-button type="warning" :icon="Refresh" @click="emit('next')">{{ next }}</el-button>
+      <el-button :icon="Refresh" @click="emit('next')">
+        {{ next }}
+      </el-button>
 
-        <el-button type="info" plain :icon="View" @click="emit('toggleAnswer')">
-          {{ showAnswer ? hideAnswer : tShowAnswer }}
-        </el-button>
-      </div>
+      <el-button plain :icon="View" @click="emit('toggleAnswer')">
+        {{ showAnswer ? hideAnswer : tShowAnswer }}
+      </el-button>
     </div>
 
     <!-- 反馈区 -->
@@ -73,32 +75,30 @@
 <style scoped>
   .answer-actions {
     display: grid;
-    gap: 16px; /* 整体垂直节奏 */
+    gap: var(--space-4);
+    justify-items: center;
   }
 
-  /* 操作区和反馈区稍微拉开 */
-  .actions {
-    margin-bottom: 4px;
-  }
-
-  .actions {
+  /* 操作按钮区 */
+  .actions-row {
     display: flex;
-    gap: 12px; /* 👈 控制按钮左右间距，推荐 12px */
+    gap: var(--space-3);
   }
 
-  /* 反馈信息不要贴太紧 */
+  /* 状态反馈 */
   .feedback {
-    margin-top: 4px;
+    width: 100%;
   }
 
-  /* 答案区域单独呼吸感 */
+  /* 显示答案 */
   .answer {
-    margin-top: 8px;
+    width: 100%;
   }
 
+  /* 答案数值强调 */
   .answer-value {
-    font-size: 16px;
+    font-size: var(--font-size-md);
     font-weight: 600;
-    margin-left: 4px;
+    margin-left: var(--space-1);
   }
 </style>

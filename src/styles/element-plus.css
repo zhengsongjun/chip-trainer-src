@@ -1,0 +1,21 @@
+:root {
+  /* Brand */
+  --el-color-primary: var(--color-primary);
+  --el-color-primary-light-3: rgba(59, 130, 246, 0.3);
+  --el-color-primary-light-5: rgba(59, 130, 246, 0.5);
+
+  /* Text */
+  --el-text-color-primary: var(--color-gray-900);
+  --el-text-color-regular: var(--color-gray-700);
+  --el-text-color-secondary: var(--color-gray-500);
+
+  /* Background */
+  --el-bg-color: var(--color-bg-container);
+  --el-bg-color-page: var(--color-bg-page);
+
+  /* Border */
+  --el-border-color: var(--color-gray-200);
+
+  /* Radius */
+  --el-border-radius-base: var(--radius-md);
+}

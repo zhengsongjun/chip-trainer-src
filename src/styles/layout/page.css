@@ -1,0 +1,5 @@
+.ui-page {
+  background: var(--color-bg-container); /* 纯白 */
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+}
