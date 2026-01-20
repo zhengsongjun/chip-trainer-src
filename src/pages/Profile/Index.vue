@@ -19,7 +19,6 @@
 
       email.value = user.email
       userId.value = user.uid
-
       await loadUserServices()
     })
   })
@@ -38,7 +37,7 @@
   const services = ref<ServiceItem[]>([])
 
   /* ================= 打开弹窗 ================= */
-  const openActivateDialog = () => {
+  function openActivateDialog() {
     activationCode.value = ''
     dialogVisible.value = true
   }
@@ -46,7 +45,6 @@
   /* ================= 读取用户服务 ================= */
   async function loadUserServices() {
     const snap = await getDoc(doc(db, 'user_activation_service', userId.value!))
-
     if (!snap.exists()) {
       services.value = []
       return
@@ -59,7 +57,7 @@
     }))
   }
 
-  /* ================= 激活逻辑（核心改动在这里） ================= */
+  /* ================= 激活逻辑 ================= */
   async function handleActivate() {
     if (!activationCode.value) {
       ElMessage.warning('请输入激活码')
@@ -69,7 +67,6 @@
     activating.value = true
 
     try {
-      /* ---------- 校验激活码 ---------- */
       const codeRef = doc(db, 'activation_codes', activationCode.value)
       const codeSnap = await getDoc(codeRef)
 
@@ -79,13 +76,11 @@
       }
 
       const codeData = codeSnap.data()
-
       if (codeData.isActivated) {
         ElMessage.warning('该激活码已被使用')
         return
       }
 
-      /* ---------- 计算服务到期 ---------- */
       const userServiceRef = doc(db, 'user_activation_service', userId.value!)
       const userSnap = await getDoc(userServiceRef)
 
@@ -95,39 +90,28 @@
       codeData.services.forEach((service: string) => {
         const currentExpire = newServices[service]?.expiresAt?.toDate()
         const baseDate = currentExpire && currentExpire > now ? currentExpire : now
-
         const newExpire = new Date(baseDate)
         newExpire.setMonth(newExpire.getMonth() + codeData.duration)
 
-        newServices[service] = {
-          expiresAt: newExpire,
-        }
-      })
-      console.log({
-        email: email.value, // ⭐ 关键：把邮箱写进来
-        services: newServices,
-        updatedAt: serverTimestamp(),
+        newServices[service] = { expiresAt: newExpire }
       })
 
-      /* ---------- 写入用户服务 + email ---------- */
       await setDoc(
         userServiceRef,
         {
-          email: email.value, // ⭐ 关键：把邮箱写进来
+          email: email.value,
           services: newServices,
           updatedAt: serverTimestamp(),
         },
         { merge: true }
       )
 
-      /* ---------- 标记激活码已使用 ---------- */
       await updateDoc(codeRef, {
         isActivated: true,
         activatedAt: serverTimestamp(),
       })
 
       ElMessage.success('激活成功')
-
       dialogVisible.value = false
       await loadUserServices()
     } catch (e) {
@@ -139,63 +123,68 @@
 </script>
 
 <template>
-  <div class="profile-wrapper">
-    <el-card class="profile-card">
-      <template #header>
-        <span>个人中心</span>
-      </template>
+  <div class="ui-page">
+    <div class="ui-stage">
+      <!-- 👇 关键：信息页内容列 -->
+      <div class="ui-content-column profile-page">
+        <!-- ========== 账户信息 ========== -->
+        <div class="ui-panel">
+          <h2 class="section-title">账户信息</h2>
 
-      <el-descriptions title="账户信息" :column="1" border>
-        <el-descriptions-item label="邮箱">
-          {{ email }}
-        </el-descriptions-item>
-      </el-descriptions>
+          <el-descriptions :column="1" border>
+            <el-descriptions-item label="邮箱">
+              {{ email }}
+            </el-descriptions-item>
+          </el-descriptions>
+        </div>
 
-      <el-divider />
+        <!-- ========== 已激活服务 ========== -->
+        <div class="ui-panel">
+          <div class="section-header">
+            <h2 class="section-title">已激活服务</h2>
+            <el-button type="primary" size="small" @click="openActivateDialog">
+              激活服务
+            </el-button>
+          </div>
 
-      <div class="service-header">
-        <span class="section-title">已激活服务</span>
-        <el-button type="primary" size="small" @click="openActivateDialog"> 激活服务 </el-button>
+          <el-table v-if="services.length" :data="services">
+            <el-table-column prop="name" label="服务名称" />
+            <el-table-column prop="expiresAt" label="到期时间" />
+          </el-table>
+
+          <el-empty v-else description="暂无已激活服务" style="margin-top: var(--space-5)" />
+        </div>
       </div>
 
-      <el-table v-if="services.length" :data="services" style="margin-top: 12px">
-        <el-table-column prop="name" label="服务名称" />
-        <el-table-column prop="expiresAt" label="到期时间" />
-      </el-table>
+      <!-- ========== 激活弹窗 ========== -->
+      <el-dialog v-model="dialogVisible" title="激活服务" width="420px" destroy-on-close>
+        <div class="ui-dialog-body">
+          <el-input v-model="activationCode" placeholder="请输入激活码" size="large" />
+        </div>
 
-      <el-empty v-else description="暂无已激活服务" style="margin-top: 24px" />
-    </el-card>
-
-    <el-dialog v-model="dialogVisible" title="激活服务" width="400px" destroy-on-close>
-      <el-input v-model="activationCode" placeholder="请输入激活码" />
-
-      <template #footer>
-        <el-button @click="dialogVisible = false"> 取消 </el-button>
-        <el-button type="primary" :loading="activating" @click="handleActivate"> 激活 </el-button>
-      </template>
-    </el-dialog>
+        <template #footer>
+          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="activating" @click="handleActivate"> 激活 </el-button>
+        </template>
+      </el-dialog>
+    </div>
   </div>
 </template>
 
 <style scoped>
-  .profile-wrapper {
-    height: calc(100vh - 56px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .profile-page {
+    padding-top: var(--space-6);
+    padding-bottom: var(--space-6);
   }
 
-  .profile-card {
-    width: 900px;
-    max-width: 90%;
-  }
-
+  /* 标题 */
   .section-title {
-    font-size: 16px;
-    font-weight: 500;
+    font-size: var(--font-size-md);
+    font-weight: 600;
   }
 
-  .service-header {
+  /* 标题 + 操作 */
+  .section-header {
     display: flex;
     align-items: center;
     justify-content: space-between;

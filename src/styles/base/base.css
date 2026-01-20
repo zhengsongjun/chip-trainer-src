@@ -1,0 +1,22 @@
+body {
+  background: var(--color-bg-page);
+  line-height: 1.6;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+  margin: 0;
+  font-weight: 600;
+}
+
+p {
+  margin: 0;
+  color: var(--color-gray-700);
+}
+
+.ui-stage {
+  min-height: calc(100vh - 56px); /* 减 header */
+}

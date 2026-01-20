@@ -7,13 +7,33 @@
 </script>
 
 <template>
-  <el-tabs v-model="activeTab">
-    <el-tab-pane label="激活码管理" name="codes">
-      <ActivationCode />
-    </el-tab-pane>
+  <div class="ui-page">
+    <div class="ui-stage">
+      <div class="ui-content-column">
+        <div class="ui-panel">
+          <el-tabs v-model="activeTab" class="admin-tabs">
+            <el-tab-pane label="激活码管理" name="codes">
+              <ActivationCode />
+            </el-tab-pane>
 
-    <el-tab-pane label="管理员调整" name="admin">
-      <UserServiceAdmin />
-    </el-tab-pane>
-  </el-tabs>
+            <el-tab-pane label="管理员调整" name="admin">
+              <UserServiceAdmin />
+            </el-tab-pane>
+          </el-tabs>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
+
+<style scoped>
+  /* Tabs 整体不要太“贴边” */
+  .admin-tabs {
+    --el-tabs-header-height: 44px;
+  }
+
+  /* Tab 内容区给一点呼吸感 */
+  :deep(.el-tab-pane) {
+    padding-top: var(--space-4);
+  }
+</style>

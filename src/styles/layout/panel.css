@@ -1,0 +1,6 @@
+.ui-panel {
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-bg-container);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}

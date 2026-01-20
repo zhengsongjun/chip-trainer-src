@@ -1,0 +1,5 @@
+.ui-stage {
+  max-width: min(1400px, 92vw);
+  margin: 0 auto;
+  padding: 0; /* 注意：不再承担视觉底板 */
+}
