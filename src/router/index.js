@@ -3,6 +3,7 @@ import { auth } from '@/firebase'
 import MainLayout from '@/layouts/MainLayout/MainLayout.vue'
 import ChipTrainer from '@/pages/ChipTrainer/Index.vue'
 import Login from '@/pages/Login/Index.vue'
+import BoardAnalysis from '@/pages/BoardAnalysis/Index.vue'
 import { onAuthStateChanged } from 'firebase/auth'
 
 const router = createRouter({
@@ -24,6 +25,12 @@ const router = createRouter({
           path: 'chip-trainer',
           name: 'ChipTrainer',
           component: ChipTrainer,
+          meta: { layout: 'main' }, // 有 Sidebar
+        },
+        {
+          path: 'board-analysis',
+          name: 'boardAnalysis',
+          component: BoardAnalysis,
           meta: { layout: 'main' }, // 有 Sidebar
         },
         {

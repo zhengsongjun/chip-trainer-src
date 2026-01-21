@@ -193,6 +193,9 @@
               {{ t('menu.chipTrainer') }}
             </el-menu-item>
           </el-menu>
+          <el-menu router class="ui-menu">
+            <el-menu-item index="/board-analysis"> 牌面分析训练 </el-menu-item>
+          </el-menu>
         </aside>
 
         <main class="ui-content">
