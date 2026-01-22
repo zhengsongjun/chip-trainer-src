@@ -5,29 +5,64 @@
   import { Hand } from 'pokersolver'
   import BoardConfigBar from './components/BoardConfigBar.vue'
   import CardFace from '@/components/cards/CardFace.vue'
-  import CardStack from '@/components/cards/CardStack.vue'
+  import CardBack from '@/components/cards/CardBack.vue'
+  import CardStackNew from '@/components/cards/CardStackNew.vue'
 
   /* =============================== 基础状态 =============================== */
 
-  const SNAP_DISTANCE = 50
   const playerCount = ref<number>(2)
+  const gameMode = ref<'holdem' | 'omaha' | 'bigo'>('omaha')
 
   const boardCards = ref<string[]>([])
   const playerHands = ref<Record<number, string[]>>({})
 
-  /* =============================== HIGH 状态 =============================== */
+  // 公共牌间距控制
+  const cardSpacing = ref<number>(88) // 默认 46px 间距
 
-  type HighChip = {
-    x: number
-    y: number
-    homeX: number
-    homeY: number
-    anchorIndex: number | null
-  }
+  // 公共牌位置控制
+  const communityCardsPosition = ref({
+    top: '38%',      // 距离顶部的位置
+    left: '46%',     // 距离左侧的位置
+    width: 260,      // 容器宽度（单位：px）
+  })
 
-  const CHIP_COUNT = 8
-  const highChips = ref<HighChip[]>([])
-  const draggingChipIndex = ref<number | null>(null)
+  // 玩家位置控制（8个座位）
+  const playerPositions = ref([
+    // Seat 1
+    { bottom: '15%', left: '22%', transform: 'rotateZ(0deg)' },
+    // Seat 2
+    { bottom: '35%', left: '10%', transform: 'rotateZ(50deg)' },
+    // Seat 3
+    { top: '17%', left: '20%', transform: 'rotateZ(124deg)' },
+    // Seat 4
+    { top: '10%', left: '28%', transform: 'rotateZ(0deg)' },
+    // Seat 5
+    { top: '10%', left: '62%', transform: 'rotateZ(0deg)' },
+    // Seat 6
+    { top: '11%', left: '85%', transform: 'rotateZ(45deg)' },
+    // Seat 7
+    { bottom: '20%', right: '18%', transform: 'rotateZ(-63deg)' },
+    // Seat 8
+    { bottom: '18%', right: '34%', transform: 'rotateZ(0deg)' },
+  ])
+
+  /* =============================== 手牌状态管理 =============================== */
+
+  type HandStatus = 'none' | 'high' | 'low' | 'both' | 'kill'
+
+  // 每个座位的手牌状态
+  const handStatuses = ref<Record<number, HandStatus>>({})
+
+  // 右键菜单状态
+  const contextMenu = ref({
+    visible: false,
+    x: 0,
+    y: 0,
+    seat: 0,
+  })
+
+  // 游戏类型：High 或 High Low
+  const gameType = ref<'high' | 'high-low'>('high')
 
   /* =============================== 结果弹窗 =============================== */
 
@@ -36,21 +71,43 @@
 
   /* =============================== 派生状态 =============================== */
 
-  const activeSeatSet = computed(() => {
+  const activeHighSeatSet = computed(() => {
     const set = new Set<number>()
-    highChips.value.forEach((chip) => {
-      if (chip.anchorIndex !== null) set.add(chip.anchorIndex)
+    Object.entries(handStatuses.value).forEach(([seat, status]) => {
+      if (status === 'high' || status === 'both') {
+        set.add(Number(seat) - 1)
+      }
     })
     return set
   })
 
-  const hasSelection = computed(() => activeSeatSet.value.size > 0)
+  const activeLowSeatSet = computed(() => {
+    const set = new Set<number>()
+    Object.entries(handStatuses.value).forEach(([seat, status]) => {
+      if (status === 'low' || status === 'both') {
+        set.add(Number(seat) - 1)
+      }
+    })
+    return set
+  })
 
-  /** ✅ 多选：你选择的所有玩家 */
-  const selectedSeats = computed<number[]>(() => {
-    return highChips.value
-      .filter((chip) => chip.anchorIndex !== null)
-      .map((chip) => chip.anchorIndex! + 1)
+  const hasSelection = computed(() => {
+    return Object.values(handStatuses.value).some(status => status !== 'none' && status !== 'kill')
+  })
+
+  /** ✅ 多选：你选择的所有 High 玩家 */
+  const selectedHighSeats = computed<number[]>(() => {
+    return Object.entries(handStatuses.value)
+      .filter(([_, status]) => status === 'high' || status === 'both')
+      .map(([seat]) => Number(seat))
+      .sort((a, b) => a - b)
+  })
+
+  /** ✅ 多选：你选择的所有 Low 玩家 */
+  const selectedLowSeats = computed<number[]>(() => {
+    return Object.entries(handStatuses.value)
+      .filter(([_, status]) => status === 'low' || status === 'both')
+      .map(([seat]) => Number(seat))
       .sort((a, b) => a - b)
   })
 
@@ -94,18 +151,20 @@
 
     boardCards.value = deck.splice(0, 5)
 
+    // 根据游戏模式决定每人发几张牌
+    const cardsPerPlayer = gameMode.value === 'holdem' ? 2 : gameMode.value === 'omaha' ? 4 : 5
+
     const hands: Record<number, string[]> = {}
     for (let seat = 1; seat <= playerCount.value; seat++) {
-      hands[seat] = deck.splice(0, 4)
+      hands[seat] = deck.splice(0, cardsPerPlayer)
     }
     playerHands.value = hands
 
-    // reset HIGH（不动 home）
-    highChips.value.forEach((chip) => {
-      chip.x = chip.homeX
-      chip.y = chip.homeY
-      chip.anchorIndex = null
-    })
+    // 重置手牌状态
+    handStatuses.value = {}
+    for (let seat = 1; seat <= playerCount.value; seat++) {
+      handStatuses.value[seat] = 'none'
+    }
   }
 
   function handleNextQuestion() {
@@ -113,129 +172,141 @@
     dealNewHand()
   }
 
-  /* =============================== HIGH 初始化 =============================== */
-
-  function initHighChips() {
-    highChips.value = Array.from({ length: CHIP_COUNT }, () => ({
-      x: 0,
-      y: 0,
-      homeX: 0,
-      homeY: 0,
-      anchorIndex: null,
-    }))
-  }
-
-  function onHighDoubleClick(index: number) {
-    const chip = highChips.value[index]
-    chip.x = chip.homeX
-    chip.y = chip.homeY
-    chip.anchorIndex = null
-  }
-
-  /* =============================== Anchor refs =============================== */
+  /* =============================== 手牌点击和菜单 =============================== */
 
   const boardRef = ref<HTMLElement | null>(null)
-  const anchorRangeRefs = ref<HTMLElement[]>([])
-  const anchorPointRefs = ref<HTMLElement[]>([])
 
-  function refreshAnchors() {
-    if (!boardRef.value) return
-
-    anchorRangeRefs.value = Array.from(
-      boardRef.value.querySelectorAll('.anchor-range')
-    ) as HTMLElement[]
-
-    anchorPointRefs.value = Array.from(
-      boardRef.value.querySelectorAll('.player-anchor')
-    ) as HTMLElement[]
-  }
-
-  /* =============================== 拖拽 =============================== */
-
-  function distancePointToRect(px: number, py: number, rect: DOMRect) {
-    const dx = Math.max(rect.left - px, 0, px - rect.right)
-    const dy = Math.max(rect.top - py, 0, py - rect.bottom)
-    return Math.sqrt(dx * dx + dy * dy)
-  }
-
-  function getAnchorCenter(range: HTMLElement, anchor: HTMLElement) {
-    const r = range.getBoundingClientRect()
-    const a = anchor.getBoundingClientRect()
-    return {
-      x: a.left - r.left + a.width / 2 + r.left,
-      y: a.top - r.top + a.height / 2 + r.top,
+  // 点击手牌显示菜单
+  function onHandClick(seat: number, e: MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation() // 阻止事件冒泡到 document
+    contextMenu.value = {
+      visible: true,
+      x: e.clientX,
+      y: e.clientY,
+      seat,
     }
   }
 
-  function onHighMouseDown(index: number, e: MouseEvent) {
-    draggingChipIndex.value = index
-    e.preventDefault()
+  // 关闭菜单
+  function closeContextMenu() {
+    contextMenu.value.visible = false
   }
 
-  function onMouseMove(e: MouseEvent) {
-    if (draggingChipIndex.value === null || !boardRef.value) return
-    const rect = boardRef.value.getBoundingClientRect()
-    const chip = highChips.value[draggingChipIndex.value]
+  // 标记为 High
+  function markAsHigh() {
+    const seat = contextMenu.value.seat
+    const currentStatus = handStatuses.value[seat]
 
-    chip.x = Math.max(0, Math.min(e.clientX - rect.left - 22, rect.width - 44))
-    chip.y = Math.max(0, Math.min(e.clientY - rect.top - 12, rect.height - 24))
+    if (currentStatus === 'low') {
+      handStatuses.value[seat] = 'both'
+    } else if (currentStatus === 'both') {
+      handStatuses.value[seat] = 'low'
+    } else {
+      handStatuses.value[seat] = 'high'
+    }
+
+    closeContextMenu()
   }
 
-  function onMouseUp() {
-    if (draggingChipIndex.value === null || !boardRef.value) return
+  // 标记为 Low
+  function markAsLow() {
+    const seat = contextMenu.value.seat
+    const currentStatus = handStatuses.value[seat]
 
-    const chip = highChips.value[draggingChipIndex.value]
-    draggingChipIndex.value = null
+    if (currentStatus === 'high') {
+      handStatuses.value[seat] = 'both'
+    } else if (currentStatus === 'both') {
+      handStatuses.value[seat] = 'high'
+    } else {
+      handStatuses.value[seat] = 'low'
+    }
 
-    const boardRect = boardRef.value.getBoundingClientRect()
-    const cx = chip.x + boardRect.left + 22
-    const cy = chip.y + boardRect.top + 12
+    closeContextMenu()
+  }
 
-    let nearest: number | null = null
-    let min = Infinity
+  // 标记为 Kill
+  function markAsKill() {
+    const seat = contextMenu.value.seat
+    handStatuses.value[seat] = 'kill'
+    closeContextMenu()
+  }
 
-    anchorRangeRefs.value.forEach((range, i) => {
-      const d = distancePointToRect(cx, cy, range.getBoundingClientRect())
-      if (d < min) {
-        min = d
-        nearest = i
+  // 复原手牌状态
+  function clearHandStatus() {
+    const seat = contextMenu.value.seat
+    handStatuses.value[seat] = 'none'
+    closeContextMenu()
+  }
+
+  // 点击其他地方关闭菜单
+  onMounted(() => {
+    document.addEventListener('click', (e) => {
+      if (contextMenu.value.visible) {
+        closeContextMenu()
       }
     })
-
-    if (nearest !== null && min <= SNAP_DISTANCE) {
-      highChips.value.forEach((c) => {
-        if (c.anchorIndex === nearest) {
-          c.x = c.homeX
-          c.y = c.homeY
-          c.anchorIndex = null
-        }
-      })
-
-      const { x, y } = getAnchorCenter(
-        anchorRangeRefs.value[nearest],
-        anchorPointRefs.value[nearest]
-      )
-
-      chip.x = x - boardRect.left - 22
-      chip.y = y - boardRect.top - 12
-      chip.anchorIndex = nearest
-    } else {
-      chip.anchorIndex = null
-    }
-  }
+  })
 
   /* =============================== 判定（严格） =============================== */
 
+  /**
+   * 生成组合：从数组中选择 k 个元素
+   */
+  function combinations<T>(arr: T[], k: number): T[][] {
+    if (k === 0) return [[]]
+    if (arr.length === 0) return []
+
+    const [first, ...rest] = arr
+    const withFirst = combinations(rest, k - 1).map(combo => [first, ...combo])
+    const withoutFirst = combinations(rest, k)
+
+    return [...withFirst, ...withoutFirst]
+  }
+
+  /**
+   * 根据游戏模式计算最佳牌型
+   */
+  function getBestHand(holeCards: string[], board: string[]) {
+    if (gameMode.value === 'holdem') {
+      // Hold'em: 手牌2张 + 公共牌5张，选最好的5张
+      return Hand.solve([...holeCards, ...board].map(toSolverCard))
+    } else {
+      // Omaha / Big O: 必须从手牌选2张，从公共牌选3张
+      const holeCombos = combinations(holeCards, 2)
+      const boardCombos = combinations(board, 3)
+
+      const allPossibleHands = []
+
+      for (const hole of holeCombos) {
+        for (const boardPart of boardCombos) {
+          const hand = Hand.solve([...hole, ...boardPart].map(toSolverCard))
+          allPossibleHands.push(hand)
+        }
+      }
+
+      // 使用 Hand.winners 找出最好的牌型
+      const winners = Hand.winners(allPossibleHands)
+      return winners[0]
+    }
+  }
+
   function checkAnswer() {
-    if (selectedSeats.value.length === 0) {
+    if (selectedHighSeats.value.length === 0) {
       ElMessage.warning('Please select the winning player(s) first')
       return
     }
 
-    const solved = Object.entries(playerHands.value).map(([seat, cards]) => ({
-      seat: Number(seat),
-      hand: Hand.solve([...cards, ...boardCards.value].map(toSolverCard)),
-    }))
+    const solved = Object.entries(playerHands.value).map(([seat, cards]) => {
+      const hand = getBestHand(cards, boardCards.value)
+      if (!hand) {
+        console.error(`Failed to get best hand for seat ${seat}`)
+      }
+      return {
+        seat: Number(seat),
+        hand,
+      }
+    })
 
     const winners = Hand.winners(solved.map((s) => s.hand))
     const winnerSeats = solved
@@ -244,8 +315,8 @@
       .sort((a, b) => a - b)
 
     const isCorrect =
-      winnerSeats.length === selectedSeats.value.length &&
-      winnerSeats.every((seat, i) => seat === selectedSeats.value[i])
+      winnerSeats.length === selectedHighSeats.value.length &&
+      winnerSeats.every((seat, i) => seat === selectedHighSeats.value[i])
     const winnerDetails = solved
       .filter((s) => winnerSeats.includes(s.seat))
       .map((s) => `Player ${s.seat}: ${s.hand.descr}`)
@@ -258,7 +329,7 @@
         `Wrong ❌\n\n` +
         `Correct winner(s): ${winnerSeats.join(', ')}\n\n` +
         `Winning hand(s):\n${winnerDetails}\n\n` +
-        `Your answer: ${selectedSeats.value.join(', ') || 'None'}`
+        `Your answer: ${selectedHighSeats.value.join(', ') || 'None'}`
       showResult.value = true
     }
   }
@@ -266,33 +337,14 @@
   /* =============================== 生命周期 =============================== */
 
   onMounted(async () => {
-    initHighChips()
     dealNewHand()
-
     await nextTick()
-
     boardRef.value = document.querySelector('.board')
-    refreshAnchors()
-
-    const rect = boardRef.value!.getBoundingClientRect()
-    const baseX = rect.width - 70
-    const baseY = 30
-
-    highChips.value.forEach((chip, i) => {
-      chip.x = baseX + i * 3
-      chip.y = baseY + i * 2
-      chip.homeX = chip.x
-      chip.homeY = chip.y
-    })
-
-    window.addEventListener('mousemove', onMouseMove)
-    window.addEventListener('mouseup', onMouseUp)
   })
 
   watch(playerCount, async () => {
     dealNewHand()
     await nextTick()
-    refreshAnchors()
   })
 </script>
 
@@ -312,11 +364,13 @@
   <div class="ui-page">
     <div class="ui-stage">
       <div class="ui-panel trainer-header">
-        <h1 class="page-title">牌面分析训练</h1>
+        <h1 class="page-title">读牌训练</h1>
       </div>
 
       <BoardConfigBar
         @change-player-count="(n) => (playerCount = n)"
+        @change-game-mode="(mode) => { gameMode = mode; dealNewHand(); }"
+        @change-game-type="(type) => { gameType = type; }"
         @submit="checkAnswer"
         @next="handleNextQuestion"
       />
@@ -325,63 +379,114 @@
       <div class="chip-stage board" ref="boardRef" :style="{ backgroundImage: `url(${bg})` }">
         <div class="board-overlay">
           <!-- 公共牌 -->
-          <div class="community-cards-group">
+          <div
+            class="community-cards-group"
+            :style="{
+              top: communityCardsPosition.top,
+              left: communityCardsPosition.left,
+              width: `${communityCardsPosition.width}px`,
+            }"
+          >
             <div
               v-for="(card, i) in boardCards"
               :key="i"
               class="community-card"
-              :class="`card-${i}`"
+              :style="{ left: `${i * cardSpacing}px`, zIndex: i + 1 }"
             >
-              <CardFace :card="card" :scale="0.75" />
+              <CardFace :card="card" :scale="1" />
             </div>
           </div>
 
           <!-- 牌堆 -->
           <div class="deck">
-            <CardStack :count="16" :scale="0.7" />
+            <CardStackNew :count="15" :offsetX="1" :offsetY="2.5" :scale="1" />
           </div>
 
           <!-- 玩家手牌 -->
-          <div v-for="seat in playerCount" :key="seat" class="player-area" :class="`seat-${seat}`">
+          <div
+            v-for="seat in playerCount"
+            :key="seat"
+            class="player-area"
+            :style="playerPositions[seat - 1]"
+            @click="onHandClick(seat, $event)"
+          >
             <div class="player-hand" v-if="playerHands[seat]">
-              <div
-                v-for="(card, i) in playerHands[seat]"
-                :key="i"
-                class="hand-card"
-                :style="{ left: `${i * 18}px`, zIndex: i }"
-              >
-                <CardFace
-                  :card="card"
-                  :scale="0.6"
-                  :active="activeSeatSet.has(seat - 1)"
-                  :has-selection="hasSelection"
-                />
+              <!-- Kill 状态显示卡片背面 -->
+              <template v-if="handStatuses[seat] === 'kill'">
+                <div
+                  v-for="(card, i) in playerHands[seat]"
+                  :key="i"
+                  class="hand-card dim-card"
+                  :style="{ left: `${i * 18}px`, zIndex: i }"
+                >
+                  <CardBack />
+                </div>
+              </template>
+
+              <!-- 正常状态显示牌面 -->
+              <template v-else>
+                <div
+                  v-for="(card, i) in playerHands[seat]"
+                  :key="i"
+                  class="hand-card"
+                  :style="{ left: `${i * 18}px`, zIndex: i }"
+                >
+                  <CardFace
+                    :card="card"
+                    :scale="1"
+                    :active="activeHighSeatSet.has(seat - 1)"
+                    :activeLow="activeLowSeatSet.has(seat - 1)"
+                    :has-selection="handStatuses[seat] !== 'none' && hasSelection"
+                  />
+                </div>
+              </template>
+
+              <!-- Both 状态显示两个 Mini Chips -->
+              <div v-if="handStatuses[seat] === 'both'" class="both-chips">
+                <div class="mini-chip high-mini-chip">HIGH</div>
+                <div class="mini-chip low-mini-chip">LOW</div>
+              </div>
+
+              <!-- High 状态显示 High Chip -->
+              <div v-if="handStatuses[seat] === 'high'" class="single-chip">
+                <div class="mini-chip high-mini-chip">HIGH</div>
+              </div>
+
+              <!-- Low 状态显示 Low Chip -->
+              <div v-if="handStatuses[seat] === 'low'" class="single-chip">
+                <div class="mini-chip low-mini-chip">LOW</div>
               </div>
             </div>
           </div>
 
-          <!-- 绿色圈（保留） -->
+          <!-- 上下文菜单 -->
           <div
-            v-for="seat in playerCount"
-            class="anchor-range"
-            :key="`anchor-range-${seat}`"
-            :class="`anchor-range-${seat}`"
+            v-if="contextMenu.visible"
+            class="context-menu"
+            :style="{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }"
+            @click.stop
           >
-            <div class="player-anchor" :class="`anchor-${seat}`">
-              <!-- {{ seat }} -->
+            <div class="menu-item" @click="markAsHigh">
+              <span class="menu-icon high-icon">🔴</span>
+              <span>Mark as High</span>
             </div>
-          </div>
-
-          <!-- HIGH Buttons -->
-          <div
-            v-for="(chip, index) in highChips"
-            :key="index"
-            class="high-chip"
-            :style="{ transform: `translate(${chip.x}px, ${chip.y}px)` }"
-            @mousedown="onHighMouseDown(index, $event)"
-            @dblclick="onHighDoubleClick(index)"
-          >
-            HIGH
+            <div
+              v-if="gameType === 'high-low' && (gameMode === 'omaha' || gameMode === 'bigo')"
+              class="menu-item"
+              @click="markAsLow"
+            >
+              <span class="menu-icon low-icon">🔵</span>
+              <span>Mark as Low</span>
+            </div>
+            <div class="menu-item kill-item" @click="markAsKill">
+              <span class="menu-icon">❌</span>
+              <span>Kill</span>
+            </div>
+            <div class="menu-divider"></div>
+            <div class="menu-item clear-item" @click="clearHandStatus">
+              <span class="menu-icon">↩️</span>
+              <span>Clear</span>
+            </div>
           </div>
         </div>
       </div>
@@ -414,10 +519,7 @@
 
   .community-cards-group {
     position: absolute;
-    top: 38%;
-    left: 50%;
     transform: translateX(-50%);
-    width: 260px;
     height: 100px;
   }
 
@@ -448,134 +550,6 @@
   }
 
   /* ===============================
- 玩家吸附锚点（绿色）
- =============================== */
-
-  .player-anchor {
-    position: absolute;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    opacity: 0.85;
-    pointer-events: none;
-    z-index: 100;
-  }
-
-  .anchor-range {
-    position: absolute;
-    width: 121px;
-    height: 106px;
-  }
-  .seat-1 {
-    bottom: 20%;
-    left: 22%;
-  }
-  .anchor-range-1 {
-    bottom: 17%;
-    left: 23%;
-  }
-  .anchor-1 {
-    bottom: 85%;
-    left: 25%;
-  }
-
-  .seat-2 {
-    bottom: 39%;
-    left: 13%;
-    transform: rotateZ(50deg);
-  }
-  .anchor-range-2 {
-    bottom: 28%;
-    left: 11%;
-    transform: rotateZ(50deg);
-  }
-  .anchor-2 {
-    top: -37px;
-    left: 35px;
-  }
-
-  .seat-3 {
-    top: 17%;
-    left: 20%;
-    transform: rotateZ(124deg);
-  }
-  .anchor-range-3 {
-    top: 23%;
-    left: 12%;
-    transform: rotateZ(124deg);
-  }
-  .anchor-3 {
-    top: -37px;
-    left: 35px;
-  }
-  .seat-4 {
-    top: 10%;
-    left: 28%;
-  }
-  .anchor-range-4 {
-    top: 14%;
-    left: 29%;
-  }
-  .anchor-4 {
-    top: 93px;
-    left: 41px;
-  }
-
-  .seat-5 {
-    top: 10%;
-    left: 62%;
-  }
-  .anchor-range-5 {
-    top: 14%;
-    left: 63%;
-  }
-  .anchor-5 {
-    top: 93px;
-    left: 41px;
-  }
-  .seat-6 {
-    top: 14%;
-    left: 80%;
-    transform: rotateZ(45deg);
-  }
-  .anchor-range-6 {
-    top: 24%;
-    right: 13%;
-    transform: rotateZ(224deg);
-  }
-  .anchor-6 {
-    top: -31px;
-    left: 35px;
-  }
-  .seat-7 {
-    top: 62%;
-    right: 17%;
-    transform: rotateZ(-63deg);
-  }
-  .anchor-range-7 {
-    top: 301px;
-    right: 141px;
-    transform: rotateZ(27deg);
-  }
-  .anchor-7 {
-    top: 26px;
-    left: -35px;
-  }
-
-  .seat-8 {
-    bottom: 20%;
-    right: 32%;
-  }
-  .anchor-range-8 {
-    bottom: 17%;
-    right: 317px;
-  }
-  .anchor-8 {
-    top: -36px;
-    left: 35px;
-  }
-
-  /* ===============================
  八个座位定位
  =============================== */
 
@@ -588,39 +562,131 @@
     top: 0;
   }
 
-  .community-card.card-0 {
-    left: 0px;
-    z-index: 1;
-  }
-  .community-card.card-1 {
-    left: 46px;
-    z-index: 2;
-  }
-  .community-card.card-2 {
-    left: 92px;
-    z-index: 3;
-  }
-  .community-card.card-3 {
-    left: 138px;
-    z-index: 4;
-  }
-  .community-card.card-4 {
-    left: 184px;
-    z-index: 5;
+  /* ===============================
+ 手牌相关
+ =============================== */
+
+  .player-area {
+    cursor: pointer;
   }
 
-  .high-chip {
+  .player-area:hover {
+    opacity: 0.95;
+  }
+
+  .dim-card {
+    filter: brightness(0.5) saturate(0.7);
+  }
+
+  /* Both 状态的 Mini Chips */
+  .both-chips {
     position: absolute;
-    width: 44px;
-    height: 44px;
-    background: #d32f2f;
-    color: #fff;
+    top: -12px;
+    right: -12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 1001;
+  }
+
+  /* Single 状态的 Chip */
+  .single-chip {
+    position: absolute;
+    top: -12px;
+    right: -12px;
+    z-index: 1001;
+  }
+
+  .mini-chip {
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    font-size: 12px;
+    border: 2px solid #fff;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: grab;
-    z-index: 1000;
+    font-size: 9px;
+    font-weight: 700;
+    font-family: 'Segoe UI', 'Arial Rounded MT Bold', 'Helvetica Rounded', Arial, sans-serif;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  }
+
+  .high-mini-chip {
+    background: #d32f2f;
+  }
+
+  .low-mini-chip {
+    background: #1976d2;
+  }
+
+  /* ===============================
+ 上下文菜单
+ =============================== */
+
+  .context-menu {
+    position: fixed;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow:
+      0 4px 12px rgba(0, 0, 0, 0.15),
+      0 0 0 1px rgba(0, 0, 0, 0.1);
+    padding: 6px;
+    min-width: 180px;
+    z-index: 10000;
+    animation: menuFadeIn 0.15s ease-out;
+  }
+
+  @keyframes menuFadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+    transition: background 0.15s ease;
+  }
+
+  .menu-item:hover {
+    background: #f5f5f5;
+  }
+
+  .menu-item.kill-item:hover {
+    background: #ffebee;
+    color: #d32f2f;
+  }
+
+  .menu-item.clear-item:hover {
+    background: #e3f2fd;
+    color: #1976d2;
+  }
+
+  .menu-divider {
+    height: 1px;
+    background: #e0e0e0;
+    margin: 4px 0;
+  }
+
+  .menu-icon {
+    font-size: 16px;
+    width: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 </style>
+

@@ -1,31 +1,27 @@
 <template>
-  <div
-    class="card-stack"
-    :style="{
-      transform: `scale(${scale})`,
-    }"
-  >
+  <div class="card-stack-new" :style="{ transform: `scale(${scale})` }">
     <div
       v-for="i in count"
       :key="i"
       class="card-layer"
       :style="{
-        top: `${(i - 1) * offset}px`,
-        left: `${(i - 1) * (offset * 0.4)}px`,
+        top: `${(i - 1) * offsetY}px`,
+        left: `${(i - 1) * offsetX}px`,
         zIndex: i,
       }"
     >
-      <img :src="backImg" />
+      <img :src="backImg" alt="card back" draggable="false" @dragstart.prevent />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-  import backImg from '@/assets/cards/card back/card back.svg?url';
+  import backImg from '@/assets/cards/card back/card back.svg?url'
 
   defineProps<{
     count?: number
-    offset?: number
+    offsetX?: number
+    offsetY?: number
     scale?: number
   }>()
 </script>
@@ -34,21 +30,21 @@
   export default {
     props: {
       count: { type: Number, default: 15 },
-      offset: { type: Number, default: 2.5 }, // 每张牌的偏移量
+      offsetX: { type: Number, default: 1 }, // 水平偏移
+      offsetY: { type: Number, default: 2.5 }, // 垂直偏移
       scale: { type: Number, default: 1 },
     },
   }
 </script>
 
 <style scoped>
-  .card-stack {
+  .card-stack-new {
     position: relative;
     width: 110px;
     height: 170px;
     transform-origin: center center;
   }
 
-  /* 单张牌 */
   .card-layer {
     position: absolute;
     width: 90px;
@@ -60,5 +56,11 @@
     width: 100%;
     height: 100%;
     object-fit: fill;
+    display: block;
+    user-select: none;
+    -webkit-user-drag: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
   }
 </style>

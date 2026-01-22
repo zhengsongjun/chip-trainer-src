@@ -2,14 +2,15 @@
   <div
     class="card card-face"
     :class="{
-      highlight: isHighlight,
+      'highlight-high': isHighlightHigh,
+      'highlight-low': isHighlightLow,
       dim: isDim,
     }"
     :style="{
       transform: `scale(${Number(scale)})`,
     }"
   >
-    <img :src="cardSrc" alt="card face" />
+    <img :src="cardSrc" alt="card face" draggable="false" @dragstart.prevent />
   </div>
 </template>
 
@@ -21,12 +22,17 @@
     scale?: string | number
 
     /**
-     * 当前这张牌是否属于被选中的玩家
+     * 当前这张牌是否属于被 High Chip 选中的玩家
      */
     active?: boolean
 
     /**
-     * 当前是否存在“任何玩家被选中”
+     * 当前这张牌是否属于被 Low Chip 选中的玩家
+     */
+    activeLow?: boolean
+
+    /**
+     * 当前是否存在"任何玩家被选中"
      * 用于区分：平常 vs 暗淡
      */
     hasSelection: boolean
@@ -35,14 +41,15 @@
   const scale = props.scale ?? 1
 
   /**
-   * 三态判定
+   * 高亮判定
    */
-  const isHighlight = computed(() => props.active === true)
+  const isHighlightHigh = computed(() => props.active === true)
+  const isHighlightLow = computed(() => props.activeLow === true)
 
   const isDim = computed(() => {
-    // 只有在“存在选择”的情况下
-    // 且自己不是 active，才暗淡
-    return props.hasSelection && props.active !== true
+    // 只有在"存在选择"的情况下
+    // 且自己不是 active 或 activeLow，才暗淡
+    return props.hasSelection && props.active !== true && props.activeLow !== true
   })
 
   const cardSrc = computed(() => {
@@ -107,9 +114,7 @@
   .card {
     width: 90px;
     height: 130px;
-    border-radius: 10px;
-    overflow: hidden;
-    background: #fff;
+    overflow: visible;
 
     transform-origin: center center;
 
@@ -121,17 +126,29 @@
   .card img {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: fill;
+    user-select: none;
+    -webkit-user-drag: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
   }
 
   /* ===============================
  高光状态（被选中的玩家）
  =============================== */
 
-  .card.highlight {
+  .card.highlight-high {
     box-shadow:
       0 0 0 3px #d4af37,
       /* 金色镶边 */ 0 6px 18px rgba(212, 175, 55, 0.55);
+    filter: brightness(1.05) contrast(1.05);
+  }
+
+  .card.highlight-low {
+    box-shadow:
+      0 0 0 3px #1e88e5,
+      /* 蓝色镶边 */ 0 6px 18px rgba(30, 136, 229, 0.55);
     filter: brightness(1.05) contrast(1.05);
   }
 

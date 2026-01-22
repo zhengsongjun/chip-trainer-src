@@ -15,8 +15,6 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
-    "@type": "link:pokersolver/@type",
-    "@types": "link:pokersolver/@types",
     "element-plus": "^2.13.1",
     "firebase": "^12.8.0",
     "pinia": "^3.0.3",
