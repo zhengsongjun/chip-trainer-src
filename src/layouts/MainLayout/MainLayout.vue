@@ -73,7 +73,7 @@
 
   const SERVICE_LABEL_MAP: Record<string, string> = {
     chipTrainer: '筹码反应训练',
-    faceTrainer: '牌面训练',
+    boardAnalysis: '牌面训练',
   }
 
   const hasValidService = computed(() => {
@@ -83,6 +83,14 @@
 
   async function loadUserServices(uid: string) {
     const snap = await getDoc(doc(db, 'user_activation_service', uid))
+    console.group('🧩 User Activation Service (Server)')
+    console.log('uid:', uid)
+    console.log('exists:', snap.exists())
+
+    if (snap.exists()) {
+      console.log('raw snap.data():', snap.data())
+      console.log('services field:', snap.data()?.services)
+    }
     if (!snap.exists()) {
       userServices.value = []
       return
@@ -118,6 +126,13 @@
   /* ================= i18n ================= */
   const { locale, t } = useI18n()
   const elementLocale = computed(() => (locale.value === 'en-US' ? enUs : zhCn))
+  const serviceValidMap = computed(() => {
+    const now = new Date()
+    return userServices.value.reduce<Record<string, boolean>>((map, s) => {
+      map[s.key] = s.expiresAt > now
+      return map
+    }, {})
+  })
 </script>
 
 <template>
@@ -188,12 +203,17 @@
       <!-- ================= Main ================= -->
       <div class="ui-main">
         <aside v-if="showSidebar" class="ui-sidebar">
-          <el-menu router default-active="/chip-trainer" class="ui-menu">
+          <el-menu
+            router
+            default-active="/chip-trainer"
+            class="ui-menu"
+            v-if="serviceValidMap.chipTrainer"
+          >
             <el-menu-item index="/chip-trainer">
               {{ t('menu.chipTrainer') }}
             </el-menu-item>
           </el-menu>
-          <el-menu router class="ui-menu">
+          <el-menu router class="ui-menu" v-if="serviceValidMap.boardAnalysis">
             <el-menu-item index="/board-analysis"> 牌面分析训练 </el-menu-item>
           </el-menu>
         </aside>

@@ -22,7 +22,7 @@
 
   const services = [
     { label: '筹码反应训练', value: 'chipTrainer' },
-    { label: '牌面训练', value: 'faceTrainer' },
+    { label: '牌面分析', value: 'boardAnalysis' },
   ]
 
   /* ================= 表单状态 ================= */

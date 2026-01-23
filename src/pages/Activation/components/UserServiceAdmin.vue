@@ -6,7 +6,7 @@
 
   const SERVICE_LABEL_MAP: Record<string, string> = {
     chipTrainer: '筹码反应训练',
-    faceTrainer: '牌面训练',
+    boardAnalysis: '牌面分析',
   }
 
   /* ================= 状态 ================= */
