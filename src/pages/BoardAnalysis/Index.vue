@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ref, onMounted, watch, nextTick, computed } from 'vue'
-  import bg from '@/assets/bg/pokeboard.png?url'
+  import bg from '@/assets/bg/poker table.png?url'
   import { ElMessage } from 'element-plus'
   import { Hand } from 'pokersolver'
   import BoardConfigBar from './components/BoardConfigBar.vue'
@@ -18,6 +18,13 @@
 
   // 公共牌间距控制
   const cardSpacing = ref<number>(88) // 默认 46px 间距
+
+  // 背景图位置控制
+  const backgroundPosition = ref({
+    size: '125%',        // 背景图大小 (可以是百分比或 px)
+    x: 'center',         // 水平位置 (可以是: left, center, right, 或百分比/px)
+    y: '41%',            // 垂直位置 (可以是: top, center, bottom, 或百分比/px)
+  })
 
   // 公共牌位置控制
   const communityCardsPosition = ref({
@@ -376,7 +383,11 @@
       />
 
       <!-- 训练舞台 -->
-      <div class="chip-stage board" ref="boardRef" :style="{ backgroundImage: `url(${bg})` }">
+      <div class="chip-stage board" ref="boardRef" :style="{
+        backgroundImage: `url(${bg})`,
+        backgroundSize: backgroundPosition.size,
+        backgroundPosition: `${backgroundPosition.x} ${backgroundPosition.y}`
+      }">
         <div class="board-overlay">
           <!-- 公共牌 -->
           <div
@@ -504,8 +515,6 @@
     height: 600px;
     margin-top: 16px;
     background-repeat: no-repeat;
-    background-size: 125% auto;
-    background-position: center 55%;
   }
 
   .board-overlay {
@@ -526,7 +535,7 @@
   .deck {
     position: absolute;
     bottom: 67px;
-    left: 50%;
+    left: 35%;
     transform: translateX(-50%);
     transform: scale(0.85);
   }
