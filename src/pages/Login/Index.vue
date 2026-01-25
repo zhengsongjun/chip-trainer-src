@@ -3,14 +3,12 @@
   import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
   import { loginWithEmail, registerWithEmail, logout, loginWithGoogle } from '@/services/auth'
   import { sendEmailVerification } from 'firebase/auth'
-  import { useUserStore } from '@/stores/user'
   import { useRouter } from 'vue-router'
   import { useUserBootstrap } from '@/composables/useUserBootstrap'
 
   /* ================= 基础 ================= */
 
   const router = useRouter()
-  const userStore = useUserStore()
 
   const isRegister = ref(false)
   const loading = ref(false)

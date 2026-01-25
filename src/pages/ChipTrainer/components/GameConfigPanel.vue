@@ -67,15 +67,13 @@
             @update:model-value="emit('update:enabledColors', $event)"
           >
             <el-space size="large">
-              <el-checkbox label="black">{{ black }}</el-checkbox>
-              <el-checkbox label="green">{{ green }}</el-checkbox>
-              <el-checkbox label="red">{{ red }}</el-checkbox>
-              <el-checkbox label="white">{{ white }}</el-checkbox>
-
-              <!-- 新增现金筹码 -->
-              <el-checkbox label="purple">{{ purple }}</el-checkbox>
-              <el-checkbox label="pink">{{ pink }}</el-checkbox>
-              <el-checkbox label="brown">{{ brown }}</el-checkbox>
+              <el-checkbox label="white">{{ white }} (1)</el-checkbox>
+              <el-checkbox label="pink">{{ pink }} (2)</el-checkbox>
+              <el-checkbox label="brown">{{ brown }} (3)</el-checkbox>
+              <el-checkbox label="red">{{ red }} (5)</el-checkbox>
+              <el-checkbox label="green">{{ green }} (25)</el-checkbox>
+              <el-checkbox label="black">{{ black }} (100)</el-checkbox>
+              <el-checkbox label="purple">{{ purple }} (500)</el-checkbox>
             </el-space>
           </el-checkbox-group>
         </el-form-item>

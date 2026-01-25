@@ -81,7 +81,7 @@
   import TourBlackAng4 from '@/assets/chips/black100/ang4.svg?component'
 
   type Angle = 'ang1' | 'ang2' | 'ang3' | 'ang4'
-  type CashColor = 'red' | 'white' | 'green' | 'black' | 'pink' | 'purple' | 'brown'
+  type CashColor = 'white1' | 'red5' | 'green25' | 'black100' | 'pink2' | 'purple500' | 'brown3'
   type TournamentColor =
     | 'red5k'
     | 'green25k'
@@ -91,7 +91,7 @@
     | 'grey5m'
     | 'orange1m'
     | 'blue100k'
-  type Color = CashColor & TournamentColor
+  type Color = CashColor | TournamentColor
 
   const props = defineProps<{
     color: Color
@@ -104,43 +104,43 @@
   // 映射：不同颜色 -> 不同角度的图
   const mapByColor: Partial<Record<string, Record<Angle, any>>> = {
     /* ===== 现金赛 cheques ===== */
-    white: {
+    white1: {
       ang1: WhiteAng1,
       ang2: WhiteAng2,
       ang3: WhiteAng3,
       ang4: WhiteAng4,
     },
-    red: {
+    red5: {
       ang1: RedAng1,
       ang2: RedAng2,
       ang3: RedAng3,
       ang4: RedAng4,
     },
-    green: {
+    green25: {
       ang1: GreenAng1,
       ang2: GreenAng2,
       ang3: GreenAng3,
       ang4: GreenAng4,
     },
-    black: {
+    black100: {
       ang1: BlackAng1,
       ang2: BlackAng2,
       ang3: BlackAng3,
       ang4: BlackAng4,
     },
-    pink: {
+    pink2: {
       ang1: PinkAng1,
       ang2: PinkAng2,
       ang3: PinkAng3,
       ang4: PinkAng4,
     },
-    purple: {
+    purple500: {
       ang1: purpleAng1,
       ang2: purpleAng2,
       ang3: purpleAng3,
       ang4: purpleAng4,
     },
-    brown: {
+    brown3: {
       ang1: brownAng1,
       ang2: brownAng2,
       ang3: brownAng3,

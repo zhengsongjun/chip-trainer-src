@@ -4,7 +4,21 @@
   import Chip from './Chip.vue'
 
   type Angle = 'ang1' | 'ang2' | 'ang3' | 'ang4'
-  type Color = 'red' | 'white' | 'green' | 'black'
+  type Color =
+    | 'white1'
+    | 'red5'
+    | 'green25'
+    | 'black100'
+    | 'pink2'
+    | 'purple500'
+    | 'brown3'
+    // 锦标赛
+    | 'green25k'
+    | 'red5k'
+    | 'yellow1k'
+    | 'blue100k'
+    | 'orange1m'
+    | 'grey5m'
 
   const props = defineProps<{
     color: Color
