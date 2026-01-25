@@ -97,6 +97,7 @@
 
 <style scoped>
   .board-config-bar {
+    margin-top: var(--space-2);
     display: flex;
     align-items: center;
     justify-content: space-between;

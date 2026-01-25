@@ -15,7 +15,6 @@ export interface CashChipLimits {
   red5: number // 红色 5
   green25: number // 绿色 25
   black100: number // 黑色 100
-
   pink50: number // 粉色 50
   purple500: number // 紫色 500
   brown1000: number // 棕色 1000
@@ -40,10 +39,10 @@ export function useCashGame(config: CashGameConfig) {
 
   function generate() {
     const groups: { color: CashColor; count: number }[] = []
+
     let total = 0
 
     const { enabledColors, limits } = config
-
     /* ================= 白色筹码（1）================= */
     if (enabledColors.includes('white')) {
       const count = randomCount(limits.white1)
@@ -88,20 +87,10 @@ export function useCashGame(config: CashGameConfig) {
     /* ================= 粉色筹码（50）================ */
     if (enabledColors.includes('pink')) {
       const count = randomCount(limits.pink50)
-
       if (count > 0) {
-        let remaining = count
-
-        // 常见 10 个一堆
-        while (remaining > 10) {
-          groups.push({ color: 'pink', count: 10 })
-          remaining -= 10
-        }
-
-        if (remaining > 0) {
-          groups.push({ color: 'pink', count: remaining })
-        }
-
+        splitWhiteStacks(count).forEach((c) => {
+          groups.push({ color: 'pink', count: c })
+        })
         total += count * 50
       }
     }
@@ -140,20 +129,10 @@ export function useCashGame(config: CashGameConfig) {
     /* ================= 紫色筹码（500）=============== */
     if (enabledColors.includes('purple')) {
       const count = randomCount(limits.purple500)
-
       if (count > 0) {
-        let remaining = count
-
-        // 高面额常见 5 个一堆
-        while (remaining > 5) {
-          groups.push({ color: 'purple', count: 5 })
-          remaining -= 5
-        }
-
-        if (remaining > 0) {
-          groups.push({ color: 'purple', count: remaining })
-        }
-
+        splitWhiteStacks(count).forEach((c) => {
+          groups.push({ color: 'purple', count: c })
+        })
         total += count * 500
       }
     }
@@ -161,20 +140,10 @@ export function useCashGame(config: CashGameConfig) {
     /* ================= 棕色筹码（1000）============== */
     if (enabledColors.includes('brown')) {
       const count = randomCount(limits.brown1000)
-
       if (count > 0) {
-        let remaining = count
-
-        // 超高面额，通常不超过 5 个一堆
-        while (remaining > 5) {
-          groups.push({ color: 'brown', count: 5 })
-          remaining -= 5
-        }
-
-        if (remaining > 0) {
-          groups.push({ color: 'brown', count: remaining })
-        }
-
+        splitWhiteStacks(count).forEach((c) => {
+          groups.push({ color: 'brown', count: c })
+        })
         total += count * 1000
       }
     }

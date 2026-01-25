@@ -11,7 +11,6 @@ export interface TournamentChipLimits {
   purple500: number
   gold1000: number
   red5000: number
-
   // ===== 新增（你已经在 index.vue 里用到的）=====
   grey5m: number
   orange1m: number
@@ -63,23 +62,7 @@ export function useTournamentGame(config: TournamentGameConfig) {
       const max = config.limits[color]
       if (!Number.isFinite(max) || max <= 0) continue
 
-      // === 关键：生成数量（安全） ===
-      let count = 0
-
-      // 紫色及以上：最多 1 枚
-      if (
-        color === 'purple500' ||
-        color === 'yellow1k' ||
-        color === 'red5k' ||
-        color === 'blue100k' ||
-        color === 'orange1m' ||
-        color === 'grey5m'
-      ) {
-        count = Math.random() < 0.5 ? 1 : 0
-      } else {
-        count = Math.floor(Math.random() * (max + 1))
-      }
-
+      const count = Math.floor(Math.random() * (max + 1))
       if (!Number.isFinite(count) || count <= 0) continue
 
       // === 拆堆（再兜一层） ===

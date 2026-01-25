@@ -37,8 +37,6 @@
     'purple500',
     'yellow1k',
     'red5k',
-
-    // ===== 新增（已 import）=====
     'grey5m',
     'orange1m',
     'blue100k',
@@ -49,8 +47,6 @@
     'red',
     'green',
     'black',
-
-    // 新增（你已经 import 过）
     'pink',
     'purple',
     'brown',
@@ -66,21 +62,20 @@
     red5: 100,
     green25: 100,
     black100: 100,
-    pink: 100,
-    purple: 100,
-    brown: 100,
+    pink50: 100,
+    purple500: 100,
+    brown1000: 100,
   })
 
   const tournamentChipLimits = ref({
     green25k: 100,
     black100: 100,
-
-    purple500: 1,
-    yellow1k: 1,
-    red5k: 1,
-    blue100k: 1,
-    orange1m: 1,
-    grey5m: 1,
+    purple500: 100,
+    yellow1k: 100,
+    red5k: 100,
+    blue100k: 100,
+    orange1m: 20,
+    grey5m: 20,
   })
 
   function saveChipConfig() {
@@ -306,32 +301,32 @@
 
           <div class="config-item">
             <span class="config-label">{{ purple }} (500)</span>
-            <el-input-number v-model="tournamentChipLimits.purple500" :min="0" :max="1" />
+            <el-input-number v-model="tournamentChipLimits.purple500" :min="0" :max="1000" />
           </div>
 
           <div class="config-item">
             <span class="config-label">{{ gold }} (1k)</span>
-            <el-input-number v-model="tournamentChipLimits.yellow1k" :min="0" :max="1" />
+            <el-input-number v-model="tournamentChipLimits.yellow1k" :min="0" :max="1000" />
           </div>
 
           <div class="config-item">
             <span class="config-label">{{ red }} (5k)</span>
-            <el-input-number v-model="tournamentChipLimits.red5k" :min="0" :max="1" />
+            <el-input-number v-model="tournamentChipLimits.red5k" :min="0" :max="1000" />
           </div>
 
           <div class="config-item">
             <span class="config-label">Blue (100k)</span>
-            <el-input-number v-model="tournamentChipLimits.blue100k" :min="0" :max="1" />
+            <el-input-number v-model="tournamentChipLimits.blue100k" :min="0" :max="1000" />
           </div>
 
           <div class="config-item">
             <span class="config-label">Orange (1M)</span>
-            <el-input-number v-model="tournamentChipLimits.orange1m" :min="0" :max="1" />
+            <el-input-number v-model="tournamentChipLimits.orange1m" :min="0" :max="20" />
           </div>
 
           <div class="config-item">
             <span class="config-label">Grey (5M)</span>
-            <el-input-number v-model="tournamentChipLimits.grey5m" :min="0" :max="1" />
+            <el-input-number v-model="tournamentChipLimits.grey5m" :min="0" :max="20" />
           </div>
         </div>
       </section>

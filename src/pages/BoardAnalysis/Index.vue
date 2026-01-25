@@ -1,15 +1,18 @@
 <script setup lang="ts">
   import { ref, onMounted, watch, nextTick, computed } from 'vue'
-  import bg from '@/assets/bg/pokeboard.png?url'
+  import bg from '@/assets/bg/pokertable.svg?url'
   import { ElMessage } from 'element-plus'
   import { Hand } from 'pokersolver'
   import BoardConfigBar from './components/BoardConfigBar.vue'
   import CardFace from '@/components/cards/CardFace.vue'
   import CardBack from '@/components/cards/CardBack.vue'
   import CardStackNew from '@/components/cards/CardStackNew.vue'
-
+  import TextureAnalysisPanel from './components/TextureAnalysisPanel/TextureAnalysisPanel.vue'
+  import HandContextMenu from './components/HandContextMenu.vue'
+  import Fireworks from '@/components/Fireworks.vue'
   /* =============================== 基础状态 =============================== */
 
+  const showFireworks = ref(false)
   const playerCount = ref<number>(2)
   const gameMode = ref<'holdem' | 'omaha' | 'bigo'>('omaha')
 
@@ -21,10 +24,18 @@
 
   // 公共牌位置控制
   const communityCardsPosition = ref({
-    top: '38%',      // 距离顶部的位置
-    left: '46%',     // 距离左侧的位置
-    width: 260,      // 容器宽度（单位：px）
+    top: '38%', // 距离顶部的位置
+    left: '46%', // 距离左侧的位置
+    width: 260, // 容器宽度（单位：px）
   })
+  const activeSeats = ref<number[]>([])
+
+  function pickRandomSeats(count: number): number[] {
+    const allSeats = [1, 2, 3, 4, 5, 6, 7, 8]
+    return shuffle(allSeats)
+      .slice(0, count)
+      .sort((a, b) => a - b)
+  }
 
   // 玩家位置控制（8个座位）
   const playerPositions = ref([
@@ -92,7 +103,9 @@
   })
 
   const hasSelection = computed(() => {
-    return Object.values(handStatuses.value).some(status => status !== 'none' && status !== 'kill')
+    return Object.values(handStatuses.value).some(
+      (status) => status !== 'none' && status !== 'kill'
+    )
   })
 
   /** ✅ 多选：你选择的所有 High 玩家 */
@@ -149,22 +162,23 @@
   function dealNewHand() {
     const deck = shuffle(fullDeck)
 
+    // 🎯 随机选座位
+    activeSeats.value = pickRandomSeats(playerCount.value)
+
     boardCards.value = deck.splice(0, 5)
 
-    // 根据游戏模式决定每人发几张牌
     const cardsPerPlayer = gameMode.value === 'holdem' ? 2 : gameMode.value === 'omaha' ? 4 : 5
 
     const hands: Record<number, string[]> = {}
-    for (let seat = 1; seat <= playerCount.value; seat++) {
-      hands[seat] = deck.splice(0, cardsPerPlayer)
-    }
-    playerHands.value = hands
+    const statuses: Record<number, HandStatus> = {}
 
-    // 重置手牌状态
-    handStatuses.value = {}
-    for (let seat = 1; seat <= playerCount.value; seat++) {
-      handStatuses.value[seat] = 'none'
+    for (const seat of activeSeats.value) {
+      hands[seat] = deck.splice(0, cardsPerPlayer)
+      statuses[seat] = 'none'
     }
+
+    playerHands.value = hands
+    handStatuses.value = statuses
   }
 
   function handleNextQuestion() {
@@ -258,7 +272,7 @@
     if (arr.length === 0) return []
 
     const [first, ...rest] = arr
-    const withFirst = combinations(rest, k - 1).map(combo => [first, ...combo])
+    const withFirst = combinations(rest, k - 1).map((combo) => [first, ...combo])
     const withoutFirst = combinations(rest, k)
 
     return [...withFirst, ...withoutFirst]
@@ -323,6 +337,7 @@
       .join('\n')
     if (isCorrect) {
       ElMessage.success('Correct! 🎉')
+      showFireworks.value = true
       setTimeout(dealNewHand, 1200)
     } else {
       resultMessage.value =
@@ -360,7 +375,7 @@
       <el-button type="primary" @click="handleNextQuestion"> Next Hand </el-button>
     </template>
   </el-dialog>
-
+  <Fireworks v-if="showFireworks" :duration="1000" @finished="showFireworks = false" />
   <div class="ui-page">
     <div class="ui-stage">
       <div class="ui-panel trainer-header">
@@ -369,8 +384,17 @@
 
       <BoardConfigBar
         @change-player-count="(n) => (playerCount = n)"
-        @change-game-mode="(mode) => { gameMode = mode; dealNewHand(); }"
-        @change-game-type="(type) => { gameType = type; }"
+        @change-game-mode="
+          (mode) => {
+            gameMode = mode
+            dealNewHand()
+          }
+        "
+        @change-game-type="
+          (type) => {
+            gameType = type
+          }
+        "
         @submit="checkAnswer"
         @next="handleNextQuestion"
       />
@@ -378,6 +402,7 @@
       <!-- 训练舞台 -->
       <div class="chip-stage board" ref="boardRef" :style="{ backgroundImage: `url(${bg})` }">
         <div class="board-overlay">
+          <TextureAnalysisPanel :board-cards="boardCards" anchor-selector=".board-overlay" />
           <!-- 公共牌 -->
           <div
             class="community-cards-group"
@@ -404,7 +429,7 @@
 
           <!-- 玩家手牌 -->
           <div
-            v-for="seat in playerCount"
+            v-for="seat in activeSeats"
             :key="seat"
             class="player-area"
             :style="playerPositions[seat - 1]"
@@ -458,36 +483,18 @@
               </div>
             </div>
           </div>
-
-          <!-- 上下文菜单 -->
-          <div
-            v-if="contextMenu.visible"
-            class="context-menu"
-            :style="{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }"
-            @click.stop
-          >
-            <div class="menu-item" @click="markAsHigh">
-              <span class="menu-icon high-icon">🔴</span>
-              <span>Mark as High</span>
-            </div>
-            <div
-              v-if="gameType === 'high-low' && (gameMode === 'omaha' || gameMode === 'bigo')"
-              class="menu-item"
-              @click="markAsLow"
-            >
-              <span class="menu-icon low-icon">🔵</span>
-              <span>Mark as Low</span>
-            </div>
-            <div class="menu-item kill-item" @click="markAsKill">
-              <span class="menu-icon">❌</span>
-              <span>Kill</span>
-            </div>
-            <div class="menu-divider"></div>
-            <div class="menu-item clear-item" @click="clearHandStatus">
-              <span class="menu-icon">↩️</span>
-              <span>Clear</span>
-            </div>
-          </div>
+          <HandContextMenu
+            :visible="contextMenu.visible"
+            :x="contextMenu.x"
+            :y="contextMenu.y"
+            :seat="contextMenu.seat"
+            :game-type="gameType"
+            :game-mode="gameMode"
+            @mark-high="markAsHigh"
+            @mark-low="markAsLow"
+            @mark-kill="markAsKill"
+            @clear="clearHandStatus"
+          />
         </div>
       </div>
     </div>
@@ -504,8 +511,8 @@
     height: 600px;
     margin-top: 16px;
     background-repeat: no-repeat;
-    background-size: 125% auto;
-    background-position: center 55%;
+    background-size: 126% auto;
+    background-position: center 42%;
   }
 
   .board-overlay {
@@ -525,8 +532,8 @@
 
   .deck {
     position: absolute;
-    bottom: 67px;
-    left: 50%;
+    bottom: 24px;
+    left: 800px;
     transform: translateX(-50%);
     transform: scale(0.85);
   }
@@ -689,4 +696,3 @@
     justify-content: center;
   }
 </style>
-
