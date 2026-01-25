@@ -5,10 +5,27 @@
     validateStraightMissingInput,
     validateStraightFlushMissingInput,
   } from '@/utils/textureAnalysis'
+  import { ArrowRight, ArrowDown } from '@element-plus/icons-vue'
+  import useBoardAnalysisTrainingI18n from '@/i18n/customHook/useBoardAnalysis'
 
+  const {
+    textureAnalysis,
+    pair,
+    flush,
+    straightPotential,
+    straightFlushPotential,
+    straightGutshotExample,
+    straightFlushGutshotExample,
+    yes,
+    no,
+    verify,
+    reset,
+    noStraightPotential,
+    noStraightFlushPossible,
+  } = useBoardAnalysisTrainingI18n()
   /* ===============================
- Props
-=============================== */
+   Props
+  =============================== */
 
   const props = defineProps<{
     boardCards: string[]
@@ -16,11 +33,11 @@
   }>()
 
   /* ===============================
- State（⚠️ 不自动验证）
-=============================== */
+   State（⚠️ 不自动验证）
+  =============================== */
 
   const panelRef = ref<HTMLElement | null>(null)
-  const isCollapsed = ref(false)
+  const isCollapsed = ref(true)
 
   const state = reactive({
     // 用户选择
@@ -44,8 +61,8 @@
   })
 
   /* ===============================
- 标准答案（一次性算）
-=============================== */
+   标准答案（一次性算）
+  =============================== */
 
   const actualTexture = computed(() => {
     if (props.boardCards.length < 5) return null
@@ -53,8 +70,8 @@
   })
 
   /* ===============================
- 拖拽（fixed + viewport）
-=============================== */
+   拖拽（fixed + viewport）
+  =============================== */
 
   let offsetX = 0
   let offsetY = 0
@@ -88,8 +105,8 @@
   })
 
   /* ===============================
- 初始定位（父级右上）
-=============================== */
+   初始定位（父级右上）
+  =============================== */
 
   onMounted(async () => {
     await nextTick()
@@ -109,8 +126,8 @@
   })
 
   /* ===============================
- 验证（唯一入口）
-=============================== */
+   验证（唯一入口）
+  =============================== */
 
   function validateAll() {
     if (!actualTexture.value) return
@@ -126,12 +143,12 @@
       const res = validateStraightMissingInput(props.boardCards, state.straightMissingInput)
       state.straightMissingResult = {
         ok: res.ok,
-        message: res.message,
+        message: res.message as string,
       }
     } else if (state.hasStraight && !actualTexture.value.hasStraight) {
       state.straightMissingResult = {
         ok: false,
-        message: '该公共牌不存在顺子潜力',
+        message: noStraightPotential.value,
       }
     } else {
       state.straightMissingResult = null
@@ -143,7 +160,7 @@
         // ❌ 本质不可能
         state.straightFlushMissingResult = {
           ok: false,
-          message: '无法组成同花顺',
+          message: noStraightFlushPossible.value,
         }
       } else {
         // ✅ 可能，才校验缺张
@@ -153,7 +170,7 @@
         )
         state.straightFlushMissingResult = {
           ok: res.ok,
-          message: res.message,
+          message: res.message as string,
         }
       }
     } else {
@@ -162,8 +179,8 @@
   }
 
   /* ===============================
- Reset
-=============================== */
+   Reset
+  =============================== */
 
   function resetAll() {
     state.hasPair = null
@@ -184,65 +201,77 @@
 </script>
 
 <template>
-  <div class="ui-panel--sm texture-panel" ref="panelRef">
+  <div class="texture-panel chip-stage" :class="{ collapsed: isCollapsed }" ref="panelRef">
     <!-- Header -->
     <header class="panel-header" @mousedown="onDragStart">
-      <span>Texture Analysis</span>
-      <span class="collapse-toggle" @click.stop="isCollapsed = !isCollapsed">
-        {{ isCollapsed ? '▸' : '▾' }}
-      </span>
+      <span class="panel-title">{{ textureAnalysis }}</span>
+
+      <el-icon class="collapse-toggle" @click.stop="isCollapsed = !isCollapsed">
+        <ArrowRight v-if="isCollapsed" />
+        <ArrowDown v-else />
+      </el-icon>
     </header>
 
     <!-- Body -->
     <div v-show="!isCollapsed" class="panel-body">
-      <!-- 对子 -->
-      <div class="row">
-        <span>对子</span>
-        <el-radio-group v-model="state.hasPair">
-          <el-radio :label="true">有</el-radio>
-          <el-radio :label="false">无</el-radio>
-        </el-radio-group>
-        <span v-if="state.pairResult !== null" :class="state.pairResult ? 'ok' : 'bad'">
-          {{ state.pairResult ? '✔' : '✖' }}
-        </span>
-      </div>
+      <!-- 基础判断 -->
+      <div
+        class="row"
+        v-for="item in [
+          { key: 'pair', label: pair, model: 'hasPair', result: 'pairResult' },
+          { key: 'flush', label: flush, model: 'hasFlush', result: 'flushResult' },
+          {
+            key: 'straight',
+            label: straightPotential,
+            model: 'hasStraight',
+            result: 'straightResult',
+          },
+        ]"
+        :key="item.key"
+      >
+        <span class="row-label">{{ item.label }}</span>
 
-      <!-- 同花 -->
-      <div class="row">
-        <span>同花</span>
-        <el-radio-group v-model="state.hasFlush">
-          <el-radio :label="true">有</el-radio>
-          <el-radio :label="false">无</el-radio>
+        <el-radio-group v-model="state[item.model]" class="row-radio">
+          <el-radio :label="true">{{ yes }}</el-radio>
+          <el-radio :label="false">{{ no }}</el-radio>
         </el-radio-group>
-        <span v-if="state.flushResult !== null" :class="state.flushResult ? 'ok' : 'bad'">
-          {{ state.flushResult ? '✔' : '✖' }}
-        </span>
-      </div>
 
-      <!-- 顺子 -->
-      <div class="row">
-        <span>顺子潜力</span>
-        <el-radio-group v-model="state.hasStraight">
-          <el-radio :label="true">有</el-radio>
-          <el-radio :label="false">无</el-radio>
-        </el-radio-group>
-        <span v-if="state.straightResult !== null" :class="state.straightResult ? 'ok' : 'bad'">
-          {{ state.straightResult ? '✔' : '✖' }}
+        <span
+          class="row-result"
+          :class="{
+            ok: state[item.result] === true,
+            bad: state[item.result] === false,
+            empty: state[item.result] === null,
+          }"
+        >
+          {{ state[item.result] === true ? '✔' : state[item.result] === false ? '✖' : '' }}
         </span>
       </div>
 
       <!-- 同花顺 -->
       <div v-if="state.hasFlush && state.hasStraight" class="row">
-        <span>同花顺潜力</span>
-        <el-radio-group v-model="state.hasStraightFlush">
-          <el-radio :label="true">有</el-radio>
-          <el-radio :label="false">无</el-radio>
+        <span class="row-label">{{ straightFlushPotential }}</span>
+
+        <el-radio-group v-model="state.hasStraightFlush" class="row-radio">
+          <el-radio :label="true">{{ yes }}</el-radio>
+          <el-radio :label="false">{{ no }}</el-radio>
         </el-radio-group>
+
         <span
-          v-if="state.straightFlushResult !== null"
-          :class="state.straightFlushResult ? 'ok' : 'bad'"
+          class="row-result"
+          :class="{
+            ok: state.straightFlushResult === true,
+            bad: state.straightFlushResult === false,
+            empty: state.straightFlushResult === null,
+          }"
         >
-          {{ state.straightFlushResult ? '✔' : '✖' }}
+          {{
+            state.straightFlushResult === true
+              ? '✔'
+              : state.straightFlushResult === false
+                ? '✖'
+                : ''
+          }}
         </span>
       </div>
 
@@ -251,17 +280,18 @@
         <el-input
           v-model="state.straightMissingInput"
           type="textarea"
-          placeholder="顺子缺张，例如：A5 或 LIVE_9"
+          :placeholder="straightGutshotExample"
         />
         <div
           v-if="state.straightMissingResult"
+          class="hint"
           :class="state.straightMissingResult.ok ? 'ok' : 'bad'"
         >
           {{ state.straightMissingResult.message }}
         </div>
       </div>
 
-      <!-- 同花顺缺张（textarea 始终显示，结果在验证后） -->
+      <!-- 同花顺缺张 -->
       <div
         v-if="state.hasFlush && state.hasStraight && state.hasStraightFlush"
         class="row vertical"
@@ -269,10 +299,11 @@
         <el-input
           v-model="state.straightFlushMissingInput"
           type="textarea"
-          placeholder="同花顺缺张，例如：9h Ts"
+          :placeholder="straightFlushGutshotExample"
         />
         <div
           v-if="state.straightFlushMissingResult"
+          class="hint"
           :class="state.straightFlushMissingResult.ok ? 'ok' : 'bad'"
         >
           {{ state.straightFlushMissingResult.message }}
@@ -282,77 +313,156 @@
 
     <!-- Footer -->
     <footer v-show="!isCollapsed" class="panel-footer">
-      <el-button size="small" type="primary" @click="validateAll"> 验证 </el-button>
-      <el-button size="small" @click="resetAll"> 重置 </el-button>
+      <el-button size="small" type="primary" @click="validateAll">
+        {{ verify }}
+      </el-button>
+      <el-button size="small" @click="resetAll">
+        {{ reset }}
+      </el-button>
     </footer>
   </div>
 </template>
 
-<style>
+<style lang="css" scoped>
   .texture-panel {
-    z-index: 100000;
     position: fixed;
-    width: 340px;
-    background: rgba(255, 255, 255, 0.65);
-    backdrop-filter: blur(14px);
-    border-radius: 14px;
+    z-index: 100000;
+    width: 320px;
+
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(12px);
+
+    border-radius: 12px;
     box-shadow:
       0 2px 4px rgba(0, 0, 0, 0.04),
       0 12px 24px rgba(0, 0, 0, 0.08);
+
+    font-size: var(--font-size-xs);
+    transition: padding 0.15s ease;
   }
 
+  /* ================= Header ================= */
+
   .panel-header {
-    font-size: 14px;
-    font-weight: 600;
     display: flex;
+    align-items: center;
     justify-content: space-between;
+
+    padding: 10px 12px;
+    font-size: var(--font-size-sm);
     cursor: move;
     user-select: none;
   }
 
+  .panel-title {
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
   .collapse-toggle {
-    font-size: 20px;
-    cursor: pointer;
+    font-size: 18px;
     opacity: 0.6;
+    cursor: pointer;
   }
 
   .collapse-toggle:hover {
     opacity: 1;
   }
 
+  /* 收起态 */
+  .texture-panel.collapsed .panel-header {
+    padding: 8px 12px;
+  }
+
+  /* ================= Body ================= */
+
   .panel-body {
-    padding: 12px;
+    padding: 8px 12px 10px;
   }
 
   .row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    min-height: 32px;
-    margin-bottom: 2px;
-    font-size: 12px;
+    gap: 8px;
+    min-height: 30px;
   }
+
+  .row + .row {
+    margin-top: 4px;
+  }
+
+  .row-label {
+    flex: 1;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-primary);
+    white-space: nowrap;
+  }
+
+  .row-radio {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* radio 字体统一 */
+  .texture-panel .el-radio {
+    font-size: var(--font-size-xs);
+    line-height: 1;
+  }
+
+  /* ================= 结果位 ================= */
+
+  .row-result {
+    width: 20px;
+    text-align: center;
+  }
+
+  .row-result.empty {
+    visibility: hidden;
+  }
+
+  .row-result.ok {
+    color: #16a34a;
+  }
+
+  .row-result.bad {
+    color: #dc2626;
+  }
+
+  /* ================= vertical ================= */
 
   .row.vertical {
     flex-direction: column;
     align-items: stretch;
     gap: 6px;
+    margin-top: 8px;
   }
 
-  .ok {
+  /* textarea 提示 */
+  .texture-panel textarea::placeholder {
+    color: var(--color-text-secondary);
+    opacity: 0.9;
+  }
+
+  /* 结果提示 */
+  .hint {
+    font-size: var(--font-size-xs);
+    line-height: 1.4;
+  }
+
+  .hint.ok {
     color: #16a34a;
-    font-weight: 600;
   }
 
-  .bad {
+  .hint.bad {
     color: #dc2626;
-    font-weight: 600;
   }
+
+  /* ================= Footer ================= */
 
   .panel-footer {
-    padding: var(--space-2) var(--space-2);
+    padding: 8px 12px;
     display: flex;
     justify-content: flex-end;
-    gap: 6px;
+    gap: 8px;
   }
 </style>

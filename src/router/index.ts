@@ -74,7 +74,9 @@ function getCurrentUser() {
 }
 
 router.beforeEach(async (to, from, next) => {
-  console.log(to.meta)
+  if (to.path === '/activation') {
+    return next()
+  }
   // ⭐ 404 页面直接放行
   if (to.meta.is404) {
     return next()

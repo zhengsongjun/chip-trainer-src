@@ -4,6 +4,7 @@
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { ArrowDown } from '@element-plus/icons-vue'
+  import { useUserStore } from '@/stores/user'
 
   import zhCn from 'element-plus/es/locale/lang/zh-cn'
   import enUs from 'element-plus/es/locale/lang/en'
@@ -12,15 +13,25 @@
   import { collection, deleteDoc, doc, getDoc, getDocs } from 'firebase/firestore'
   import { auth, db } from '@/firebase'
   import { logout } from '@/services/auth'
+  import { initUserProfile } from '@/services/userProfile'
   const route = useRoute()
+  onAuthStateChanged(auth, async (user) => {
+    userStore.reset() // ⭐ 关键
 
+    if (user) {
+      const profile = await initUserProfile(user)
+      userStore.setProfile(profile)
+    } else {
+      userStore.clear()
+    }
+  })
   const showSidebar = computed(() => {
     return route.meta.layout !== 'simple' && hasValidService.value
   })
 
   /* ================= router ================= */
   const router = useRouter()
-
+  const userStore = useUserStore()
   function goHome() {
     router.push('/chip-trainer')
   }
@@ -152,9 +163,9 @@
           </el-select>
 
           <!-- danger -->
-          <el-button type="danger" size="small" plain @click="clearAllTestData">
+          <!-- <el-button type="danger" size="small" plain @click="clearAllTestData">
             🧨 清空测试数据
-          </el-button>
+          </el-button> -->
 
           <!-- auth -->
           <div class="ui-auth-area">
@@ -190,7 +201,9 @@
 
                   <el-dropdown-item divided @click="goProfile"> 个人中心 </el-dropdown-item>
 
-                  <el-dropdown-item @click="goActivationPage"> 激活码生成 </el-dropdown-item>
+                  <el-dropdown-item v-if="userStore.isAdmin" @click="goActivationPage">
+                    管理员页面
+                  </el-dropdown-item>
 
                   <el-dropdown-item divided @click="handleLogout"> 退出登录 </el-dropdown-item>
                 </el-dropdown-menu>

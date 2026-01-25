@@ -22,6 +22,11 @@
     purple,
     inputPlaceholder,
     gold,
+    pink,
+    brown,
+    orange,
+    grey,
+    blue,
   } = useChipTrainingI18n()
   const { save, cancel } = useUISystem()
   const tournamentInputRef = ref<InstanceType<typeof TournamentAnswerInput> | null>(null)
@@ -262,17 +267,17 @@
             <el-input-number v-model="cashChipLimits.black100" :min="0" :max="1000" />
           </div>
           <div class="config-item">
-            <span class="config-label">Pink</span>
+            <span class="config-label">{{ pink }}</span>
             <el-input-number v-model="cashChipLimits.pink" :min="0" :max="1000" />
           </div>
 
           <div class="config-item">
-            <span class="config-label">Purple</span>
+            <span class="config-label">{{ purple }}</span>
             <el-input-number v-model="cashChipLimits.purple" :min="0" :max="1000" />
           </div>
 
           <div class="config-item">
-            <span class="config-label">Brown</span>
+            <span class="config-label">{{ brown }}</span>
             <el-input-number v-model="cashChipLimits.brown" :min="0" :max="1000" />
           </div>
         </div>
@@ -315,17 +320,17 @@
           </div>
 
           <div class="config-item">
-            <span class="config-label">Blue (100k)</span>
+            <span class="config-label">{{ blue }} (100k)</span>
             <el-input-number v-model="tournamentChipLimits.blue100k" :min="0" :max="1000" />
           </div>
 
           <div class="config-item">
-            <span class="config-label">Orange (1M)</span>
+            <span class="config-label">{{ orange }} (1M)</span>
             <el-input-number v-model="tournamentChipLimits.orange1m" :min="0" :max="20" />
           </div>
 
           <div class="config-item">
-            <span class="config-label">Grey (5M)</span>
+            <span class="config-label">{{ grey }} (5M)</span>
             <el-input-number v-model="tournamentChipLimits.grey5m" :min="0" :max="20" />
           </div>
         </div>

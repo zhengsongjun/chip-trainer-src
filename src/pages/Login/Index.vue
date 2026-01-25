@@ -2,11 +2,18 @@
   import { ref, reactive } from 'vue'
   import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
   import { loginWithEmail, registerWithEmail, logout, loginWithGoogle } from '@/services/auth'
+  import { sendEmailVerification } from 'firebase/auth'
+  import { initUserProfile } from '@/services/userProfile'
+  import { useUserStore } from '@/stores/user'
   import { useRouter } from 'vue-router'
+
+  /* ================= 基础 ================= */
+
   const router = useRouter()
+  const userStore = useUserStore()
+
   const isRegister = ref(false)
   const loading = ref(false)
-
   const formRef = ref<FormInstance>()
 
   const form = reactive({
@@ -15,9 +22,8 @@
     confirmPassword: '',
   })
 
-  /**
-   * 表单校验规则
-   */
+  /* ================= 表单校验 ================= */
+
   const rules: FormRules = {
     email: [
       { required: true, message: '请输入邮箱', trigger: 'blur' },
@@ -28,11 +34,7 @@
       { min: 6, message: '密码至少 6 位', trigger: 'blur' },
     ],
     confirmPassword: [
-      {
-        required: true,
-        message: '请再次输入密码',
-        trigger: 'blur',
-      },
+      { required: true, message: '请再次输入密码', trigger: 'blur' },
       {
         validator: (_, value, callback) => {
           if (value !== form.password) {
@@ -46,15 +48,27 @@
     ],
   }
 
+  /* ================= Google 登录 ================= */
+
   const handleGoogleLogin = async () => {
     loading.value = true
     try {
       const user = await loginWithGoogle()
 
-      ElMessage.success('Google 登录成功')
-      console.log('Google 用户：', user)
+      // ================= 邮箱未验证：自动重发 =================
+      if (!user.emailVerified) {
+        await sendEmailVerification(user)
+        ElMessage.warning('邮箱尚未验证，已为你重新发送一封验证邮，请完成验证')
+        await logout()
+        return
+      }
 
-      // 登录成功跳转
+      // ================= 已验证：初始化 / 获取用户 profile =================
+      const profile = await initUserProfile(user)
+      userStore.setProfile(profile)
+
+      ElMessage.success(profile.role === 'admin' ? '管理员登录成功' : '登录成功')
+
       router.push('/chip-trainer')
     } catch (err: any) {
       ElMessage.error(err.message || 'Google 登录失败')
@@ -63,9 +77,8 @@
     }
   }
 
-  /**
-   * 提交表单
-   */
+  /* ================= 邮箱登录 / 注册 ================= */
+
   const handleSubmit = async () => {
     if (!formRef.value) return
 
@@ -76,7 +89,7 @@
 
       try {
         if (isRegister.value) {
-          // 注册
+          // ===== 注册 =====
           await registerWithEmail(form.email, form.password)
           await logout()
 
@@ -84,22 +97,28 @@
 
           switchMode(false)
         } else {
-          // 登录
+          // ===== 登录 =====
           const user = await loginWithEmail(form.email, form.password)
 
           if (!user.emailVerified) {
+            // ⭐ 自动重新发送验证邮件
+            await sendEmailVerification(user)
+
+            ElMessage.warning(
+              '邮箱尚未验证，已为你重新发送一封验证邮件，请点击【最新一封】完成验证'
+            )
+
             await logout()
-            ElMessage.warning('请先前往邮箱完成验证')
             return
           }
 
-          ElMessage.success('登录成功')
-          setTimeout(() => {
-            router.push('/chip-trainer')
-          }, 1500)
+          // ⭐ 初始化 / 获取用户 profile
+          const profile = await initUserProfile(user)
+          userStore.setProfile(profile)
 
-          // TODO: 登录成功跳转
-          // router.push('/chip-trainer')
+          ElMessage.success(profile.role === 'admin' ? '管理员登录成功' : '登录成功')
+
+          router.push('/chip-trainer')
         }
       } catch (err: any) {
         ElMessage.error(err.message || '操作失败，请重试')
@@ -109,17 +128,13 @@
     })
   }
 
-  /**
-   * 切换登录 / 注册
-   */
+  /* ================= 工具方法 ================= */
+
   const switchMode = (register: boolean) => {
     isRegister.value = register
     resetForm()
   }
 
-  /**
-   * 清空表单
-   */
   const resetForm = () => {
     form.email = ''
     form.password = ''
@@ -166,6 +181,7 @@
         >
           {{ isRegister ? '注册' : '登录' }}
         </el-button>
+
         <el-divider>或</el-divider>
 
         <el-button style="width: 100%" :loading="loading" @click="handleGoogleLogin">

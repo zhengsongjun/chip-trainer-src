@@ -16,6 +16,11 @@ export default {
   green: 'Green',
   red: 'Red',
   white: 'White',
+  pink: 'Pink',
+  brown: 'Brown',
+  blue: 'Blue',
+  orange: 'Orange',
+  grey: 'Grey',
 
   inputPlaceholder: 'Enter total amount',
 

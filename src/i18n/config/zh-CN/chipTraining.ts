@@ -16,6 +16,11 @@ export default {
   green: '绿色',
   red: '红色',
   white: '白色',
+  pink: '粉色',
+  brown: '棕色',
+  blue: '蓝色',
+  orange: '橙色',
+  grey: '灰色',
 
   inputPlaceholder: '请输入总数值',
 

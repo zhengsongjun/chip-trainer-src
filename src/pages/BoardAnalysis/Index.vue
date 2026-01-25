@@ -7,9 +7,13 @@
   import CardFace from '@/components/cards/CardFace.vue'
   import CardBack from '@/components/cards/CardBack.vue'
   import CardStackNew from '@/components/cards/CardStackNew.vue'
-  import TextureAnalysisPanel from './components/TextureAnalysisPanel/TextureAnalysisPanel.vue'
+  import TextureAnalysisPanel from './components/TextureAnalysisPanel.vue'
   import HandContextMenu from './components/HandContextMenu.vue'
   import Fireworks from '@/components/Fireworks.vue'
+  import useBoardAnalysisTrainingI18n from '@/i18n/customHook/useBoardAnalysis'
+
+  const { pageTitle, markHigh, markLow, kill, close } = useBoardAnalysisTrainingI18n()
+
   /* =============================== 基础状态 =============================== */
 
   const showFireworks = ref(false)
@@ -371,15 +375,15 @@
     >
 
     <template #footer>
-      <el-button @click="showResult = false"> I got it </el-button>
-      <el-button type="primary" @click="handleNextQuestion"> Next Hand </el-button>
+      <el-button @click="showResult = false"> 确认 </el-button>
+      <el-button type="primary" @click="handleNextQuestion">换一题</el-button>
     </template>
   </el-dialog>
   <Fireworks v-if="showFireworks" :duration="1000" @finished="showFireworks = false" />
   <div class="ui-page">
     <div class="ui-stage">
       <div class="ui-panel trainer-header">
-        <h1 class="page-title">读牌训练</h1>
+        <h1 class="page-title">{{ pageTitle }}</h1>
       </div>
 
       <BoardConfigBar

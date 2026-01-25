@@ -20,6 +20,11 @@ export default function useChipTrainingI18n() {
     black: computed(() => t('chipTraining.black')),
     purple: computed(() => t('chipTraining.purple')),
     gold: computed(() => t('chipTraining.gold')),
+    pink: computed(() => t('chipTraining.pink')),
+    brown: computed(() => t('chipTraining.brown')),
+    blue: computed(() => t('chipTraining.blue')),
+    orange: computed(() => t('chipTraining.orange')),
+    grey: computed(() => t('chipTraining.grey')),
 
     gameType: computed(() => t('chipTraining.gameType')),
     chipColors: computed(() => t('chipTraining.chipColors')),

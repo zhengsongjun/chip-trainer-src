@@ -139,7 +139,7 @@
         </div>
 
         <!-- ========== 已激活服务 ========== -->
-        <div class="ui-panel">
+        <div class="ui-panel service-panel">
           <div class="section-header">
             <h2 class="section-title">已激活服务</h2>
             <el-button type="primary" size="small" @click="openActivateDialog">
@@ -172,6 +172,9 @@
 </template>
 
 <style scoped>
+  .service-panel {
+    margin-top: var(--space-6);
+  }
   .profile-page {
     padding-top: var(--space-6);
     padding-bottom: var(--space-6);

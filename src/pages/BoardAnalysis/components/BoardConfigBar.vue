@@ -1,6 +1,14 @@
 <script setup lang="ts">
   import { ref, watch } from 'vue'
+  import useBoardAnalysisTrainingI18n from '@/i18n/customHook/useBoardAnalysis'
 
+  const {
+    trainingMode,
+    type,
+    playerCount: ConfigplayerCount,
+    submit,
+    nextQuestion,
+  } = useBoardAnalysisTrainingI18n()
   const playerCount = ref(2)
   const gameMode = ref<'holdem' | 'omaha' | 'bigo'>('omaha')
   const gameType = ref<'high' | 'high-low'>('high')
@@ -49,7 +57,7 @@
   <div class="ui-panel board-config-bar">
     <!-- 左侧：配置 -->
     <div class="config-left">
-      <span class="config-label">游戏模式</span>
+      <span class="config-label">{{ trainingMode }}</span>
       <el-select
         :teleported="false"
         v-model="gameMode"
@@ -62,7 +70,7 @@
         <el-option label="Big O" value="bigo" />
       </el-select>
 
-      <span class="config-label">游戏类型</span>
+      <span class="config-label">{{ type }}</span>
       <el-select
         :teleported="false"
         v-model="gameType"
@@ -74,7 +82,7 @@
         <el-option label="High Low" value="high-low" :disabled="gameMode === 'holdem'" />
       </el-select>
 
-      <span class="config-label">玩家数量</span>
+      <span class="config-label">{{ ConfigplayerCount }}</span>
       <el-select
         :teleported="false"
         v-model="playerCount"
@@ -88,9 +96,9 @@
 
     <!-- 右侧：操作 -->
     <div class="config-right">
-      <el-button size="small" @click="onSubmit"> 提交 </el-button>
+      <el-button size="small" @click="onSubmit"> {{ submit }} </el-button>
 
-      <el-button size="small" type="default" @click="onNext"> 换一题 </el-button>
+      <el-button size="small" type="default" @click="onNext"> {{ nextQuestion }} </el-button>
     </div>
   </div>
 </template>

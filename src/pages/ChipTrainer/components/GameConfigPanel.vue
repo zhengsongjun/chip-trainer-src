@@ -12,6 +12,11 @@
     black,
     purple,
     gold,
+    pink,
+    brown,
+    blue,
+    orange,
+    grey,
   } = useChipTraining()
 
   defineProps<{
@@ -69,8 +74,8 @@
 
               <!-- 新增现金筹码 -->
               <el-checkbox label="purple">{{ purple }}</el-checkbox>
-              <el-checkbox label="pink">Pink</el-checkbox>
-              <el-checkbox label="brown">Brown</el-checkbox>
+              <el-checkbox label="pink">{{ pink }}</el-checkbox>
+              <el-checkbox label="brown">{{ brown }}</el-checkbox>
             </el-space>
           </el-checkbox-group>
         </el-form-item>
@@ -92,9 +97,9 @@
               <el-checkbox label="black100">{{ black }}（100）</el-checkbox>
 
               <!-- 新增锦标赛筹码 -->
-              <el-checkbox label="blue100k">Blue（100k）</el-checkbox>
-              <el-checkbox label="orange1m">Orange（1M）</el-checkbox>
-              <el-checkbox label="grey5m">Grey（5M）</el-checkbox>
+              <el-checkbox label="blue100k">{{ blue }}（100k）</el-checkbox>
+              <el-checkbox label="orange1m">{{ orange }}（1M）</el-checkbox>
+              <el-checkbox label="grey5m">{{ grey }}（5M）</el-checkbox>
             </el-space>
           </el-checkbox-group>
         </el-form-item>

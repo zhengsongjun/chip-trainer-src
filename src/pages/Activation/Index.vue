@@ -2,6 +2,7 @@
   import { ref } from 'vue'
   import ActivationCode from './components/ActivationCode.vue'
   import UserServiceAdmin from './components/UserServiceAdmin.vue'
+  import UserRoleManage from './components/UserRoleManage.vue'
 
   const activeTab = ref<'codes' | 'admin'>('codes')
 </script>
@@ -16,8 +17,12 @@
               <ActivationCode />
             </el-tab-pane>
 
-            <el-tab-pane label="管理员调整" name="admin">
+            <el-tab-pane label="会员功能时间调整" name="admin">
               <UserServiceAdmin />
+            </el-tab-pane>
+
+            <el-tab-pane label="指派管理员" name="role">
+              <UserRoleManage />
             </el-tab-pane>
           </el-tabs>
         </div>
