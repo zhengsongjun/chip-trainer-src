@@ -337,18 +337,17 @@
       winnerSeats.every((seat, i) => seat === selectedHighSeats.value[i])
     const winnerDetails = solved
       .filter((s) => winnerSeats.includes(s.seat))
-      .map((s) => `Player ${s.seat}: ${s.hand.descr}`)
+      .map((s) => `玩家 ${s.seat}: ${s.hand.descr}`)
       .join('\n')
     if (isCorrect) {
-      ElMessage.success('Correct! 🎉')
+      ElMessage.success('正确! 🎉')
       showFireworks.value = true
       setTimeout(dealNewHand, 1200)
     } else {
       resultMessage.value =
-        `Wrong ❌\n\n` +
-        `Correct winner(s): ${winnerSeats.join(', ')}\n\n` +
-        `Winning hand(s):\n${winnerDetails}\n\n` +
-        `Your answer: ${selectedHighSeats.value.join(', ') || 'None'}`
+        `正确的获胜者: ${winnerSeats.join(', ')}\n\n` +
+        `获胜玩家:\n${winnerDetails}\n\n` +
+        `你的答案: ${selectedHighSeats.value.join(', ') || 'None'}`
       showResult.value = true
     }
   }
@@ -368,7 +367,7 @@
 </script>
 
 <template>
-  <el-dialog v-model="showResult" title="Wrong Answer" width="420px" :close-on-click-modal="false">
+  <el-dialog v-model="showResult" title="回答错误" width="420px" :close-on-click-modal="false">
     <pre style="white-space: pre-wrap; line-height: 1.6"
       >{{ resultMessage }}
   </pre

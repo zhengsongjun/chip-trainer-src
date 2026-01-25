@@ -268,17 +268,17 @@
           </div>
           <div class="config-item">
             <span class="config-label">{{ pink }}</span>
-            <el-input-number v-model="cashChipLimits.pink" :min="0" :max="1000" />
+            <el-input-number v-model="cashChipLimits.pink50" :min="0" :max="1000" />
           </div>
 
           <div class="config-item">
             <span class="config-label">{{ purple }}</span>
-            <el-input-number v-model="cashChipLimits.purple" :min="0" :max="1000" />
+            <el-input-number v-model="cashChipLimits.purple500" :min="0" :max="1000" />
           </div>
 
           <div class="config-item">
             <span class="config-label">{{ brown }}</span>
-            <el-input-number v-model="cashChipLimits.brown" :min="0" :max="1000" />
+            <el-input-number v-model="cashChipLimits.brown1000" :min="0" :max="1000" />
           </div>
         </div>
       </section>
