@@ -6,6 +6,7 @@ import Login from '@/pages/Login/Index.vue'
 import BoardAnalysis from '@/pages/BoardAnalysis/Index.vue'
 import PotTrainer from '@/pages/PotTrainer/Index.vue'
 import { onAuthStateChanged } from 'firebase/auth'
+import { useUserStore } from '@/stores/user'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -38,7 +39,7 @@ const router = createRouter({
           path: 'pot-trainer',
           name: 'PotTrainer',
           component: PotTrainer,
-          meta: { layout: 'main' }, // 有 Sidebar
+          meta: { layout: 'main', requiresService: 'potTrainer' }, // 有 Sidebar
         },
         {
           path: 'profile',
@@ -51,6 +52,11 @@ const router = createRouter({
           name: 'Activation',
           component: () => import('@/pages/Activation/Index.vue'),
           meta: { layout: 'simple' }, // 无 Sidebar
+        },
+        {
+          path: '/403',
+          component: () => import('@/pages/NoPermission/Index.vue'),
+          meta: { layout: 'simple' },
         },
       ],
     },
@@ -79,9 +85,35 @@ router.beforeEach(async (to, from, next) => {
 
   if (!user || !user.emailVerified) {
     next('/login')
-  } else {
-    next()
+    return
   }
+
+  // 检查服务权限
+  const userStore = useUserStore()
+  const requiredService = to.meta.requiresService
+
+  if (requiredService) {
+    // 管理员拥有所有服务的访问权限
+    const role = userStore.profile?.role
+    if (role !== 'admin') {
+      // 普通用户需要检查服务权限
+      const services = userStore.profile?.services || {}
+      const service = services[requiredService]
+
+      if (!service || !service.expiresAt || !service.expiresAt.seconds) {
+        next('/403')
+        return
+      }
+
+      const expiresAtMs = service.expiresAt.seconds * 1000
+      if (expiresAtMs <= Date.now()) {
+        next('/403')
+        return
+      }
+    }
+  }
+
+  next()
 })
 
 export default router

@@ -242,7 +242,7 @@
                 :style="getScaledPosition(playerChipPositions[seat - 1].green)"
               >
                 <ChipStack
-                  color="green"
+                  color="green25"
                   :count="actualGreenCounts[seat - 1]"
                   :size="actualChipConfig.size"
                   :spacing="actualChipConfig.spacing"
@@ -255,7 +255,7 @@
                 :style="getScaledPosition(playerChipPositions[seat - 1].black)"
               >
                 <ChipStack
-                  color="black"
+                  color="black100"
                   :count="20"
                   :size="actualChipConfig.size"
                   :spacing="actualChipConfig.spacing"
@@ -268,7 +268,7 @@
                 :style="getScaledPosition(playerChipPositions[seat - 1].purple)"
               >
                 <ChipStack
-                  color="purple"
+                  color="purple500"
                   :count="10"
                   :size="actualChipConfig.size"
                   :spacing="actualChipConfig.spacing"
@@ -286,7 +286,7 @@
               top: dealerAnchors[smallBlindIndex].y,
             }"
           >
-            <Chip color="green" angle="ang1" :size="actualChipConfig.size" />
+            <Chip color="green25" angle="ang1" :size="actualChipConfig.size" />
           </div>
 
           <!-- 大盲筹码（2个绿色筹码，错开放置） -->
@@ -300,11 +300,11 @@
           >
             <!-- 第一个筹码 -->
             <div class="blind-chip-item" :style="{ left: '0px', top: '0px' }">
-              <Chip color="green" angle="ang1" :size="actualChipConfig.size" />
+              <Chip color="green25" angle="ang1" :size="actualChipConfig.size" />
             </div>
             <!-- 第二个筹码，错开一点 -->
             <div class="blind-chip-item" :style="{ left: `${actualChipConfig.size * 0.3}px`, top: `${actualChipConfig.size * 0.15}px` }">
-              <Chip color="green" angle="ang2" :size="actualChipConfig.size" />
+              <Chip color="green25" angle="ang2" :size="actualChipConfig.size" />
             </div>
           </div>
 

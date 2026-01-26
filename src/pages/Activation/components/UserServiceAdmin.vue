@@ -1,12 +1,13 @@
 <script setup lang="ts">
   import { ref, computed, onMounted } from 'vue'
-  import { ElMessage } from 'element-plus'
+  import { ElMessage, ElMessageBox } from 'element-plus'
   import { db } from '@/firebase'
-  import { collection, doc, getDocs, updateDoc, serverTimestamp } from 'firebase/firestore'
+  import { collection, doc, getDocs, updateDoc, serverTimestamp, query, where, setDoc } from 'firebase/firestore'
 
   const SERVICE_LABEL_MAP: Record<string, string> = {
     chipTrainer: '筹码反应训练',
     boardAnalysis: '牌面分析',
+    potTrainer: '底池计算训练',
   }
 
   /* ================= 状态 ================= */
@@ -34,6 +35,78 @@
   const editingUserId = ref('')
   const editingServiceKey = ref('')
   const newExpireDate = ref('')
+
+  /* ================= 批量添加服务 ================= */
+  const batchLoading = ref(false)
+
+  async function addServiceToAllAdmins() {
+    try {
+      await ElMessageBox.confirm(
+        '确定要给所有管理员添加「底池计算训练」服务吗？到期时间将设置为 2099-12-31。',
+        '批量添加服务',
+        { type: 'warning' }
+      )
+
+      batchLoading.value = true
+
+      // 1. 获取所有管理员用户
+      const usersRef = collection(db, 'users')
+      const adminQuery = query(usersRef, where('role', '==', 'admin'))
+      const adminSnap = await getDocs(adminQuery)
+
+      if (adminSnap.empty) {
+        ElMessage.warning('未找到管理员用户')
+        return
+      }
+
+      const adminUids = adminSnap.docs.map((d) => d.id)
+      const expireDate = new Date('2099-12-31')
+
+      // 2. 批量更新每个管理员的服务
+      const promises = adminUids.map(async (uid) => {
+        const serviceRef = doc(db, 'user_activation_service', uid)
+
+        // 获取用户邮箱
+        const userDoc = adminSnap.docs.find((d) => d.id === uid)
+        const email = userDoc?.data().email || ''
+
+        // 检查文档是否存在
+        const serviceSnap = await getDocs(collection(db, 'user_activation_service'))
+        const existingDoc = serviceSnap.docs.find((d) => d.id === uid)
+
+        if (existingDoc) {
+          // 文档存在，更新
+          await updateDoc(serviceRef, {
+            [`services.potTrainer.expiresAt`]: expireDate,
+            updatedAt: serverTimestamp(),
+          })
+        } else {
+          // 文档不存在，创建
+          await setDoc(serviceRef, {
+            email,
+            services: {
+              potTrainer: {
+                expiresAt: expireDate,
+              },
+            },
+            updatedAt: serverTimestamp(),
+          })
+        }
+      })
+
+      await Promise.all(promises)
+
+      ElMessage.success(`成功为 ${adminUids.length} 位管理员添加了「底池计算训练」服务`)
+      await fetchUsers()
+    } catch (err: any) {
+      if (err !== 'cancel') {
+        console.error('批量添加服务失败:', err)
+        ElMessage.error('批量添加服务失败：' + err.message)
+      }
+    } finally {
+      batchLoading.value = false
+    }
+  }
 
   /* ================= 读取用户服务 ================= */
   async function fetchUsers() {
@@ -99,7 +172,17 @@
 <template>
   <el-card>
     <template #header>
-      <span>管理员调整</span>
+      <div style="display: flex; justify-content: space-between; align-items: center">
+        <span>管理员调整</span>
+        <el-button
+          type="primary"
+          size="small"
+          :loading="batchLoading"
+          @click="addServiceToAllAdmins"
+        >
+          给所有管理员添加「底池计算训练」
+        </el-button>
+      </div>
     </template>
 
     <el-input

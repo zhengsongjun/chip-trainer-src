@@ -37,6 +37,7 @@
   const SERVICE_LABEL_MAP: Record<string, string> = {
     chipTrainer: '筹码反应训练',
     boardAnalysis: '牌面训练',
+    potTrainer: '底池计算训练',
   }
 
   type LocalService = {
@@ -48,6 +49,7 @@
   const activeMenu = computed(() => {
     if (route.path.startsWith('/board-analysis')) return '/board-analysis'
     if (route.path.startsWith('/chip-trainer')) return '/chip-trainer'
+    if (route.path.startsWith('/pot-trainer')) return '/pot-trainer'
     return route.path
   })
   const userServices = computed<LocalService[]>(() => {
@@ -76,10 +78,19 @@
   })
 
   const serviceValidMap = computed(() => {
-    return userServices.value.reduce<Record<string, boolean>>((map, s) => {
-      map[s.key] = s.valid
-      return map
+    const map = userServices.value.reduce<Record<string, boolean>>((acc, s) => {
+      acc[s.key] = s.valid
+      return acc
     }, {})
+
+    // 管理员拥有所有服务的访问权限
+    if (userStore.profile?.role === 'admin') {
+      map.chipTrainer = true
+      map.boardAnalysis = true
+      map.potTrainer = true
+    }
+
+    return map
   })
 
   /* ================= sidebar ================= */
@@ -185,6 +196,10 @@
 
             <el-menu-item v-if="serviceValidMap.boardAnalysis" index="/board-analysis">
               牌面分析训练
+            </el-menu-item>
+
+            <el-menu-item v-if="serviceValidMap.potTrainer" index="/pot-trainer">
+              底池计算训练
             </el-menu-item>
           </el-menu>
         </aside>

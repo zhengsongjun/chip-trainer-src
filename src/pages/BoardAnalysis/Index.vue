@@ -550,13 +550,18 @@
       .map((s) => s.seat)
       .sort((a, b) => a - b)
 
-    const isCorrect =
+    const winners = Hand.winners(solvedHigh.map((s) => s.hand))
+    const winnerSeats = solvedHigh
+      .filter((s) => winners.includes(s.hand))
+      .map((s) => s.seat)
+      .sort((a, b) => a - b)
+
+    let isCorrect =
       winnerSeats.length === selectedHighSeats.value.length &&
       winnerSeats.every((seat, i) => seat === selectedHighSeats.value[i])
-    const winnerDetails = solved
+    const winnerDetails = solvedHigh
       .filter((s) => winnerSeats.includes(s.seat))
       .map((s) => `玩家 ${s.seat}: ${s.hand.descr}`)
-    let isCorrect = true
     let resultMsg = ''
 
     // 检查 High 答案
@@ -572,11 +577,6 @@
       .filter((s) => highWinnerSeats.includes(s.seat))
       .map((s) => `Player ${s.seat}: ${s.hand.descr}`)
       .join('\n')
-    if (isCorrect) {
-      ElMessage.success('正确! 🎉')
-      showFireworks.value = true
-      setTimeout(dealNewHand, 1200)
-
     // 检查 Low 答案（如果是 High-Low 模式）
     if (gameType.value === 'high-low') {
       const solvedLow = Object.entries(playerHands.value).map(([seat, cards]) => {
@@ -642,13 +642,6 @@
         showResult.value = true
       }
     } else {
-      resultMessage.value =
-        `正确的获胜者: ${winnerSeats.join(', ')}\n\n` +
-        `获胜玩家:\n${winnerDetails}\n\n` +
-        `你的答案: ${selectedHighSeats.value.join(', ') || 'None'}`
-      showResult.value = true
-    }
-  }
       // High only 模式
       if (!isCorrect) {
         resultMessage.value =

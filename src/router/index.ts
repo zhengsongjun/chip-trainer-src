@@ -33,6 +33,12 @@ const router = createRouter({
           meta: { layout: 'main', requiresService: 'boardAnalysis' }, // 有 Sidebar
         },
         {
+          path: 'pot-trainer',
+          name: 'PotTrainer',
+          component: () => import('@/pages/PotTrainer/Index.vue'),
+          meta: { layout: 'main', requiresService: 'potTrainer' }, // 有 Sidebar
+        },
+        {
           path: 'profile',
           name: 'Profile',
           component: () => import('@/pages/Profile/Index.vue'),
@@ -95,6 +101,12 @@ router.beforeEach((to, from, next) => {
   // 5️⃣ 不需要服务权限的页面
   const requiredService = to.meta.requiresService as string
   if (!requiredService) {
+    return next()
+  }
+
+  // 管理员拥有所有服务的访问权限
+  const role = userStore.profile?.role
+  if (role === 'admin') {
     return next()
   }
 

@@ -40,5 +40,6 @@
     "vite-svg-loader": "^5.1.0",
     "vue-eslint-parser": "^10.2.0",
     "vue-tsc": "^3.2.2"
-  }
+  },
+  "packageManager": "yarn@4.12.0"
 }
