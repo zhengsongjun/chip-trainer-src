@@ -11,19 +11,19 @@ export interface WrongCaseDetail {
   subMode: string
 }
 
-export class FirestoreWrongCasePersister implements DetailPersister {
-  async save(sessionId: string, details: unknown[]): Promise<void> {
-    const wrongCases = details as WrongCaseDetail[]
+export class FirestoreWrongCasePersister {
+  async save(trainingStatsId: string, wrongCases: any[]) {
+    console.log('[debug:wrongCase.save]', {
+      trainingStatsId,
+      count: wrongCases.length,
+    })
+    if (!trainingStatsId) return
+    if (!wrongCases.length) return
 
-    if (!wrongCases || wrongCases.length === 0) return
-
-    const colRef = collection(db, 'training_stats', sessionId, 'wrong_cases')
+    const colRef = collection(db, 'training_stats', trainingStatsId, 'wrong_case')
 
     for (const wrongCase of wrongCases) {
       await addDoc(colRef, wrongCase)
     }
-
-    // ⭐️ 关键：防止重复 flush 时再次写入
-    wrongCases.length = 0
   }
 }

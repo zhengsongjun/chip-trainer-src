@@ -37,6 +37,16 @@
     () => props.modelValue,
     (val) => {
       if (syncingFromInside) return
+
+      // ⭐️ 外部清空：彻底 reset + 聚焦第一个
+      if (!val) {
+        values.value = Array(len).fill('')
+        nextTick(() => {
+          inputs.value[0]?.focus()
+        })
+        return
+      }
+
       const chars = val.replace(/\D/g, '').slice(0, len).split('')
       values.value = Array.from({ length: len }, (_, i) => chars[i] ?? '')
     },

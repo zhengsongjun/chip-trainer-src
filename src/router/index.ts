@@ -4,6 +4,7 @@ import ChipTrainer from '@/pages/ChipTrainer/Index.vue'
 import Login from '@/pages/Login/Index.vue'
 import BoardAnalysis from '@/pages/BoardAnalysis/Index.vue'
 import { useUserStore } from '@/stores/user'
+import { beaconFlush } from '@/trainer'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -73,8 +74,9 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
+  console.log('[router] beforeEach hit')
   const userStore = useUserStore()
-
+  beaconFlush()
   // 1️⃣ 404 直接放行
   if (to.matched.some((record) => record.meta.is404)) {
     return next()
@@ -94,7 +96,7 @@ router.beforeEach((to, from, next) => {
   }
 
   // 4️⃣ activation 仅管理员
-  if (to.path === '/activation') {
+  if (['/activation', '/pot-trainer'].includes(to.path)) {
     const role = userStore.profile?.role
 
     if (role !== 'admin') {

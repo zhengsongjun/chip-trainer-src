@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref, onMounted, watch } from 'vue'
+  import { ref, onMounted, watch, computed } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { auth, db } from '@/firebase'
   import {
@@ -15,83 +15,100 @@
     limit,
     startAfter,
   } from 'firebase/firestore'
+
   /* ================= 批量选择 ================= */
 
   const selectedRows = ref<any[]>([])
 
-  /**
-   * 选中行变化
-   */
   function handleSelectionChange(rows: any[]) {
     selectedRows.value = rows
   }
 
-  /**
-   * 是否允许被选中（已激活的不允许）
-   */
   function rowSelectable(row: any) {
     return !row.isActivated
   }
+
+  /* ================= Dialog ================= */
+
   const batchDialogVisible = ref(false)
   const batchCount = ref<number | null>(null)
-  /* ================= 配置项 ================= */
-  const durations = [
-    { label: '3个月', value: 3 },
-    { label: '6个月', value: 6 },
-    { label: '12个月', value: 12 },
+
+  /* ================= 时长配置 ================= */
+
+  type DurationUnit = 'day' | 'month'
+  type DurationOption = {
+    key: string
+    label: string
+    amount: number
+    unit: DurationUnit
+  }
+
+  const durations: DurationOption[] = [
+    { key: '1d', label: '1天', amount: 1, unit: 'day' },
+    { key: '3d', label: '3天', amount: 3, unit: 'day' },
+    { key: '7d', label: '7天', amount: 7, unit: 'day' },
+    { key: '1m', label: '1个月', amount: 1, unit: 'month' },
+    { key: '3m', label: '3个月', amount: 3, unit: 'month' },
+    { key: '6m', label: '6个月', amount: 6, unit: 'month' },
+    { key: '12m', label: '12个月', amount: 12, unit: 'month' },
   ]
 
-  const pageSize = 10
-  const currentPage = ref(1)
-  const lastVisible = ref<any>(null)
-  const hasMore = ref(true)
-  const statusFilter = ref<'all' | 'activated' | 'inactive'>('all')
-  function openBatchDialog() {
-    if (!selectedDuration.value) {
-      ElMessage.warning('请选择时长')
-      return
-    }
-    if (!selectedServices.value.length) {
-      ElMessage.warning('请选择服务')
-      return
-    }
+  const selectedDurationKey = ref<string | null>(null)
 
-    batchDialogVisible.value = true
-  }
+  const selectedDuration = computed<DurationOption | null>(() => {
+    return durations.find((d) => d.key === selectedDurationKey.value) || null
+  })
+
+  /* ================= 服务配置 ================= */
 
   const services = [
     { label: '筹码反应训练', value: 'chipTrainer' },
-    { label: '牌面分析', value: 'boardAnalysis' },
+    { label: '牌面分析训练', value: 'boardAnalysis' },
+    { label: '底池计算训练', value: 'potTrainer' },
   ]
 
-  /* ================= 表单状态 ================= */
-  const selectedDuration = ref<number | null>(null)
   const selectedServices = ref<string[]>([])
 
-  /* ================= 激活码列表 ================= */
-  const activationCodes = ref<any[]>([])
+  /* ================= 分页 & 筛选 ================= */
+
+  const pageSize = 10
+  const lastVisible = ref<any>(null)
+  const hasMore = ref(true)
   const loading = ref(false)
 
+  const statusFilter = ref<'all' | 'activated' | 'inactive'>('all')
+
+  /* ================= 激活码数据 ================= */
+
+  const activationCodes = ref<any[]>([])
+
   /* ================= 工具函数 ================= */
+
   function generateCode() {
     return `ACT-${Math.random().toString(36).slice(2, 10).toUpperCase()}`
   }
 
-  function calculatePrice() {
-    const base = 100
-    return Number(
-      (
-        base * (selectedDuration.value || 1) * selectedServices.value.length +
-        Math.random() * 50
-      ).toFixed(2)
-    )
+  function calcDurationMs(d: DurationOption) {
+    const dayMs = 24 * 60 * 60 * 1000
+    return d.unit === 'day' ? d.amount * dayMs : d.amount * 30 * dayMs
   }
 
-  /* ================= 读取激活码 ================= */
+  function calculatePrice() {
+    if (!selectedDuration.value) return 0
+    const base = 100
+    const factor =
+      selectedDuration.value.unit === 'day'
+        ? selectedDuration.value.amount / 30
+        : selectedDuration.value.amount
+
+    return Number((base * factor * selectedServices.value.length + Math.random() * 50).toFixed(2))
+  }
+
+  /* ================= 拉取激活码 ================= */
+
   async function fetchActivationCodes(reset = false) {
     if (reset) {
       activationCodes.value = []
-      currentPage.value = 1
       lastVisible.value = null
       hasMore.value = true
     }
@@ -104,13 +121,13 @@
       const baseRef = collection(db, 'activation_codes')
       const constraints: any[] = []
 
-      // 状态筛选
       if (statusFilter.value === 'activated') {
         constraints.push(where('isActivated', '==', true))
       } else if (statusFilter.value === 'inactive') {
         constraints.push(where('isActivated', '==', false))
       }
 
+      constraints.push(where('createdAt', '!=', null))
       constraints.push(orderBy('createdAt', 'desc'))
 
       if (lastVisible.value) {
@@ -135,15 +152,20 @@
           ...d.data(),
         })
       })
+    } catch (e) {
+      ElMessage.error('加载激活码失败')
+      console.log(e)
     } finally {
       loading.value = false
     }
   }
+
   watch(statusFilter, () => {
     fetchActivationCodes(true)
   })
 
-  /* ================= 创建激活码 ================= */
+  /* ================= 创建 ================= */
+
   async function createActivationCode() {
     if (!selectedDuration.value) {
       ElMessage.warning('请选择时长')
@@ -157,7 +179,11 @@
     const code = generateCode()
 
     await setDoc(doc(db, 'activation_codes', code), {
-      duration: selectedDuration.value,
+      duration: {
+        amount: selectedDuration.value.amount,
+        unit: selectedDuration.value.unit,
+        durationMs: calcDurationMs(selectedDuration.value),
+      },
       services: selectedServices.value,
       price: calculatePrice(),
       isActivated: false,
@@ -167,45 +193,17 @@
 
     ElMessage.success('激活码生成成功')
 
-    selectedDuration.value = null
+    selectedDurationKey.value = null
     selectedServices.value = []
 
-    fetchActivationCodes()
+    fetchActivationCodes(true)
   }
 
-  /* ================= 操作 ================= */
-  async function copyCode(code: string) {
-    await navigator.clipboard.writeText(code)
-    ElMessage.success('激活码已复制到剪贴板')
-  }
+  /* ================= 批量生成 ================= */
 
-  async function removeCode(row: any) {
-    if (row.isActivated) {
-      ElMessage.warning('已激活的激活码不能删除')
-      return
-    }
-
-    await ElMessageBox.confirm(`确认删除激活码 ${row.code}？`, '确认删除', { type: 'warning' })
-
-    await deleteDoc(doc(db, 'activation_codes', row.code))
-    ElMessage.success('已删除')
-    fetchActivationCodes()
-  }
-
-  /**
-   * 批量生成激活码
-   */
   async function createBatchActivationCodes() {
-    if (!selectedDuration.value) {
-      ElMessage.warning('请选择时长')
-      return
-    }
-    if (!selectedServices.value.length) {
-      ElMessage.warning('请选择服务')
-      return
-    }
-    if (!batchCount.value || batchCount.value <= 0) {
-      ElMessage.warning('请输入有效的生成数量')
+    if (!selectedDuration.value || !selectedServices.value.length || !batchCount.value) {
+      ElMessage.warning('请填写完整信息')
       return
     }
 
@@ -218,7 +216,11 @@
         const code = generateCode()
         tasks.push(
           setDoc(doc(db, 'activation_codes', code), {
-            duration: selectedDuration.value,
+            duration: {
+              amount: selectedDuration.value.amount,
+              unit: selectedDuration.value.unit,
+              durationMs: calcDurationMs(selectedDuration.value),
+            },
             services: selectedServices.value,
             price: calculatePrice(),
             isActivated: false,
@@ -231,19 +233,45 @@
       await Promise.all(tasks)
 
       ElMessage.success(`成功生成 ${batchCount.value} 个激活码`)
-
       batchDialogVisible.value = false
       batchCount.value = null
 
-      fetchActivationCodes()
+      selectedDurationKey.value = null
+      selectedServices.value = []
+
+      fetchActivationCodes(true)
     } finally {
       loading.value = false
     }
   }
+  async function copyCode(code: string) {
+    await navigator.clipboard.writeText(code)
+    ElMessage.success('激活码已复制到剪贴板')
+  }
+
+  /* ================= 删除 ================= */
+
+  async function removeCode(row: any) {
+    if (row.isActivated) {
+      ElMessage.warning('已激活的激活码不能删除')
+      return
+    }
+
+    await ElMessageBox.confirm(`确认删除激活码 ${row.code}？`, '确认删除', {
+      type: 'warning',
+    })
+
+    await deleteDoc(doc(db, 'activation_codes', row.code))
+    ElMessage.success('已删除')
+    fetchActivationCodes(true)
+  }
+  function openBatchDialog() {
+    batchDialogVisible.value = true
+  }
 
   async function batchRemoveCodes() {
     if (!selectedRows.value.length) {
-      ElMessage.warning('请先选择要删除的激活码')
+      ElMessage.warning('请选择激活码')
       return
     }
 
@@ -256,14 +284,11 @@
     loading.value = true
 
     try {
-      const tasks = selectedRows.value.map((row) =>
-        deleteDoc(doc(db, 'activation_codes', row.code))
+      await Promise.all(
+        selectedRows.value.map((row) => deleteDoc(doc(db, 'activation_codes', row.code)))
       )
 
-      await Promise.all(tasks)
-
       ElMessage.success('批量删除成功')
-
       selectedRows.value = []
       fetchActivationCodes(true)
     } finally {
@@ -302,8 +327,8 @@
     <!-- ================= 生成区 ================= -->
     <div class="tool-section">
       <div class="tool-row">
-        <el-radio-group v-model="selectedDuration">
-          <el-radio v-for="item in durations" :key="item.value" :label="item.value">
+        <el-radio-group v-model="selectedDurationKey">
+          <el-radio v-for="item in durations" :key="item.key" :label="item.key">
             {{ item.label }}
           </el-radio>
         </el-radio-group>
@@ -347,7 +372,20 @@
     >
       <el-table-column type="selection" width="48" :selectable="rowSelectable" />
       <el-table-column prop="code" label="激活码" width="220" />
-      <el-table-column prop="duration" label="时长（月）" width="100" />
+      <el-table-column label="时长" width="140">
+        <template #default="{ row }">
+          <span>
+            <!-- 新结构：object -->
+            <template v-if="typeof row.duration === 'object' && row.duration">
+              {{ row.duration.amount }}
+              {{ row.duration.unit === 'day' ? '天' : '个月' }}
+            </template>
+
+            <!-- 旧结构：number（月） -->
+            <template v-else> {{ row.duration }} 个月 </template>
+          </span>
+        </template>
+      </el-table-column>
       <el-table-column label="服务">
         <template #default="{ row }">
           {{ row.services.join(', ') }}

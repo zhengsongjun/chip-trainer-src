@@ -61,16 +61,6 @@
     <div class="stats-section">
       <AccuracyTrendChart :data="accuracyTrend" />
     </div>
-
-    <!-- ================= 错题分析 ================= -->
-    <!-- <div class="stats-section">
-      <ErrorAnalysisTabs :chipStructure="chipStructure" :answerDiff="answerDiff" />
-    </div> -->
-
-    <!-- ================= 时间段分布 ================= -->
-    <div class="stats-section">
-      <PracticeTimeDistribution />
-    </div>
   </div>
 </template>
 

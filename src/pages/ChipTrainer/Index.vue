@@ -47,7 +47,6 @@
   const tournamentInputRef = ref<InstanceType<typeof TournamentAnswerInput> | null>(null)
 
   const round = ref(0) // UI 展示用
-  const answeredCount = ref(0) // 业务用（关键）
   const questionStartAt = ref(Date.now())
 
   const chipGroups = ref<any[]>([])
@@ -55,10 +54,11 @@
   const userInput = ref('')
   const feedback = ref<'idle' | 'correct' | 'wrong'>('idle')
 
-  const wrongDetails = ref<any[]>([])
-
   /* ================= 模式 ================= */
   const gameType = ref<'cash' | 'tournament'>('cash')
+  const canSubmit = computed(() => {
+    return userInput.value.trim().length > 0
+  })
 
   const tournamentColors = ref<TournamentColor[]>([
     'green25k',
@@ -564,7 +564,9 @@
   }
 
   /* ================= 核心：提交答案 ================= */
-  function onSubmit() {
+
+  async function onSubmit() {
+    if (!canSubmit.value) return
     const val = Number(userInput.value)
 
     const isCorrect =
@@ -573,31 +575,7 @@
         : val === correctValue.value
 
     feedback.value = isCorrect ? 'correct' : 'wrong'
-
-    if (gameType.value === 'tournament') {
-      tournamentInputRef.value?.reset()
-    } else {
-      userInput.value = ''
-    }
-
-    if (!isCorrect) {
-      const detail = {
-        category: 'chip_trainer',
-        key: 'wrong_case',
-        payload: {
-          userAnswer: val,
-          correctValue: correctValue.value,
-          chipGroups: chipGroups.value,
-        },
-        createdAt: Date.now(),
-        mode: 'chip',
-        subMode: gameType.value,
-      }
-
-      wrongDetails.value.push(detail)
-      addDetail(detail)
-    }
-
+    userInput.value = ''
     const answerTimeMs = Date.now() - questionStartAt.value
 
     update({
@@ -605,12 +583,19 @@
       answerTimeMs,
     })
 
-    answeredCount.value++
-
-    // ===== 10 题一个 Session（UI 同步）=====
-    if (answeredCount.value % 10 === 0) {
-      wrongDetails.value = []
+    if (!isCorrect) {
+      addDetail({
+        type: 'wrong_case',
+        payload: {
+          userAnswer: val,
+          correctValue: correctValue.value,
+          chipGroups: chipGroups.value,
+        },
+      })
     }
+
+    // ⭐️ 只通知 session，是否 flush 由 session 决定
+    await flush(false)
 
     if (isCorrect) {
       setTimeout(newRound, 700)
@@ -622,23 +607,17 @@
   }
 
   /* ================= gameType 切换 = Session 边界 ================= */
-  watch(gameType, async (type) => {
-    // 1️⃣ 切模式前：强制落库（哪怕不足 10 题）
-    if (answeredCount.value > 0) {
-      await flush(true)
-    }
+  watch(gameType, async (type, prevType) => {
+    if (type === prevType) return
 
-    // 2️⃣ UI & 状态重置
-    answeredCount.value = 0
-    wrongDetails.value = []
+    // ⭐️ 只要 session 里有题，就强制 flush
+    await flush(true)
+
+    // ⚠️ 不要再 initSession！
+    // SessionManager 在 flush 后已经 reset
+
     userInput.value = ''
     feedback.value = 'idle'
-
-    // 3️⃣ 开一个全新的 Session
-    const profile = userStore.profile
-    if (profile) {
-      initSession(createSessionContext({ uid: profile.uid, email: profile.email }, 'chip', type))
-    }
 
     if (type === 'tournament') {
       tournamentInputRef.value?.reset()
@@ -730,6 +709,7 @@
             />
 
             <AnswerActions
+              :can-submit="canSubmit"
               :feedback="feedback as any"
               :showAnswer="showAnswer"
               :correctValue="correctValue"
@@ -743,6 +723,7 @@
             <TournamentAnswerInput ref="tournamentInputRef" v-model="userInput" :length="7" />
 
             <AnswerActions
+              :can-submit="canSubmit"
               :feedback="feedback as any"
               :showAnswer="showAnswer"
               :correctValue="correctValue"

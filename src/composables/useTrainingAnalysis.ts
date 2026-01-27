@@ -104,6 +104,7 @@ export function useTrainingAnalysis(options: { userId: Ref<string>; range: Ref<T
    * Summary（你之前写的是对的）
    * ====================== */
   const summary = computed(() => {
+    console.log('sessions', sessions)
     if (!sessions.value.length) {
       return {
         totalQuestions: 0,

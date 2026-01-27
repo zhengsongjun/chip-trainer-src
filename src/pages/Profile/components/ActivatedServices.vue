@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { ref, onMounted } from 'vue'
+  import { Timestamp } from 'firebase/firestore'
   import { ElMessage } from 'element-plus'
   import { auth, db } from '@/firebase'
   import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
@@ -51,7 +52,6 @@
     activationCode.value = ''
     dialogVisible.value = true
   }
-
   async function handleActivate() {
     if (!activationCode.value) {
       ElMessage.warning('请输入激活码')
@@ -69,6 +69,7 @@
       }
 
       const codeData = codeSnap.data()
+
       if (codeData.isActivated) {
         ElMessage.warning('该激活码已被使用')
         return
@@ -80,13 +81,25 @@
       const now = new Date()
       const newServices: any = userSnap.exists() ? { ...(userSnap.data().services || {}) } : {}
 
-      codeData.services.forEach((service: string) => {
-        const currentExpire = newServices[service]?.expiresAt?.toDate()
-        const baseDate = currentExpire && currentExpire > now ? currentExpire : now
-        const newExpire = new Date(baseDate)
-        newExpire.setMonth(newExpire.getMonth() + codeData.duration)
+      // ⭐ 新逻辑：支持 day / month
+      const duration = codeData.duration
+      const durationMs =
+        typeof duration === 'object' && duration.durationMs
+          ? duration.durationMs
+          : duration * 30 * 24 * 60 * 60 * 1000 // 兼容旧数据
 
-        newServices[service] = { expiresAt: newExpire }
+      codeData.services.forEach((service: string) => {
+        const currentExpire = newServices[service]?.expiresAt?.toDate?.()
+        const baseTime =
+          currentExpire && currentExpire.getTime() > now.getTime()
+            ? currentExpire.getTime()
+            : now.getTime()
+
+        const newExpire = new Date(baseTime + durationMs)
+
+        newServices[service] = {
+          expiresAt: Timestamp.fromDate(newExpire),
+        }
       })
 
       await setDoc(
@@ -107,7 +120,8 @@
       ElMessage.success('激活成功')
       dialogVisible.value = false
       await loadUserServices()
-    } catch {
+    } catch (e) {
+      console.error(e)
       ElMessage.error('激活失败')
     } finally {
       activating.value = false

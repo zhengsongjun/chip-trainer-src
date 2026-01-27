@@ -118,6 +118,30 @@
     },
     { immediate: true }
   )
+
+  watch(
+    () => ({
+      profile: userStore.profile,
+      hasService: hasValidService.value,
+      path: route.path,
+    }),
+    ({ profile, hasService, path }) => {
+      // 1️⃣ 未登录，不管（路由守卫会处理）
+      if (!profile) return
+
+      // 2️⃣ 管理员永远放行
+      if (profile.role === 'admin') return
+
+      // 3️⃣ 已经在 profile 页，别跳，防止死循环
+      if (path === '/profile') return
+
+      // 4️⃣ 没有任何有效服务 → 强制去 profile
+      if (!hasService) {
+        router.replace('/profile')
+      }
+    },
+    { immediate: true }
+  )
 </script>
 
 <template>
@@ -198,7 +222,10 @@
               牌面分析训练
             </el-menu-item>
 
-            <el-menu-item v-if="serviceValidMap.potTrainer" index="/pot-trainer">
+            <el-menu-item
+              v-if="serviceValidMap.potTrainer && userStore.profile?.role === 'admin'"
+              index="/pot-trainer"
+            >
               底池计算训练
             </el-menu-item>
           </el-menu>

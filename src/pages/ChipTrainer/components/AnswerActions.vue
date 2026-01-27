@@ -15,6 +15,7 @@
     feedback: 'idle' | 'correct' | 'wrong'
     showAnswer: boolean
     correctValue: number
+    canSubmit: boolean
   }>()
 
   const emit = defineEmits<{
@@ -28,7 +29,7 @@
   <div class="answer-actions">
     <!-- 操作区 -->
     <div class="actions-row">
-      <el-button type="primary" :icon="Check" @click="emit('submit')">
+      <el-button type="primary" :icon="Check" :disabled="!canSubmit" @click="emit('submit')">
         {{ submit }}
       </el-button>
 
