@@ -3,7 +3,7 @@ import type { SessionContext } from './session/session.context'
 import { SessionManager } from './session/session.manager'
 import { FirestoreSessionPersister } from './storage/firestore.session'
 import { finalizeSession } from './session/session.finalize'
-
+const DISABLE_ALL_REQUESTS = true
 // ===== 全局单例 =====
 let currentSession: SessionContext | null = null
 let sessionManager: SessionManager | null = null
@@ -47,6 +47,7 @@ export function addDetail(detail: unknown) {
  * - 不 await，不阻塞
  */
 export function beaconFlush() {
+  if (DISABLE_ALL_REQUESTS) return
   if (!currentSession) return
   if (beaconFlushed) return
   if (currentSession.totalCount === 0) return
@@ -87,6 +88,7 @@ export function setupBeaconGuard() {
  * 手动 flush（你原本就有，不动）
  */
 export async function flush(isComplete: boolean) {
+  if (DISABLE_ALL_REQUESTS) return
   if (!sessionManager || !currentSession) return
   if (currentSession.totalCount === 0) return
 
@@ -97,6 +99,7 @@ export async function flush(isComplete: boolean) {
  * 你原本的 Beacon flush（不动）
  */
 export function flushWithBeacon() {
+  if (DISABLE_ALL_REQUESTS) return
   if (!currentSession || !sessionManager) return
 
   const session = finalizeSession(currentSession, true)
