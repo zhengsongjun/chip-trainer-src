@@ -41,4 +41,13 @@ export default defineConfig({
     },
   },
   base: '/',
+  server: {
+    proxy: {
+      '/__/functions': {
+        target: 'http://127.0.0.1:5001',
+        changeOrigin: true,
+        rewrite: (path) => path.replace('/__/functions', '/demo-no-project/us-central1'),
+      },
+    },
+  },
 })

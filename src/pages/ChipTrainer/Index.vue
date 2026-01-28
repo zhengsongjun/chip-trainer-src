@@ -1,21 +1,19 @@
 <script setup lang="ts">
   import { ref, computed, watch } from 'vue'
-
   import TournamentAnswerInput from './components/TournamentAnswerInput.vue'
   import GameConfigPanel from './components/GameConfigPanel.vue'
   import ChipBoard from './components/ChipBoard.vue'
   import AnswerActions from './components/AnswerActions.vue'
-
   import { useTournamentGame } from './customHooks/useTournamentGame'
   import { CashColor, useCashGame } from './customHooks/useCashGame'
   import { TournamentColor } from './utils/tournamentConfig'
-
   import useChipTrainingI18n from '../../i18n/customHook/chipTraining/useChipTraining'
   import useUISystem from '@/i18n/customHook/UI/useUISystem'
-
   import { useUserStore } from '@/stores/user'
   import { update, initSession, flush, addDetail } from '@/trainer'
   import { createSessionContext } from '@/trainer/session/session.create'
+  import { CASH_PRESETS, type CashPresetKey } from './presetsConfig/cashPresets'
+  import { TOURNAMENT_PRESETS, type TournamentPresetKey } from './presetsConfig/tournamentPresets'
 
   /* ================= i18n ================= */
   const {
@@ -59,7 +57,8 @@
   const canSubmit = computed(() => {
     return userInput.value.trim().length > 0
   })
-
+  const cashPreset = ref<CashPresetKey>('none')
+  const tournamentPreset = ref<TournamentPresetKey>('none')
   const tournamentColors = ref<TournamentColor[]>([
     'green25k',
     'black100',
@@ -94,409 +93,6 @@
   // 标志位：是否是自动切换到"无预设"（此时不应用配置，只改变下拉框值）
   const isAutoSwitchingCashPreset = ref(false)
   const isAutoSwitchingTournamentPreset = ref(false)
-
-  /* ================= 现金桌预设配置 ================= */
-  const CASH_PRESETS = {
-    none: {
-      // 无预设时不修改颜色选择，保持用户当前的选择
-      limits: {
-        white1: 100,
-        pink2: 100,
-        brown3: 100,
-        red5: 100,
-        green25: 100,
-        black100: 100,
-        purple500: 100,
-        yellow1k: 20,
-        red5k: 20,
-        green25k: 20,
-      },
-      minLimits: {
-        white1: 0,
-        pink2: 0,
-        brown3: 0,
-        red5: 0,
-        green25: 0,
-        black100: 0,
-        purple500: 0,
-        yellow1k: 0,
-        red5k: 0,
-        green25k: 0,
-      },
-    },
-    red_rock_1_3: {
-      colors: ['white1', 'pink2', 'red5', 'green25'],
-      limits: {
-        white1: 40,
-        pink2: 20,
-        brown3: 0,
-        red5: 200,
-        green25: 60,
-        black100: 0,
-        purple500: 0,
-        yellow1k: 0,
-        red5k: 0,
-        green25k: 0,
-      },
-      minLimits: {
-        white1: 0,
-        pink2: 0,
-        brown3: 0,
-        red5: 0,
-        green25: 0,
-        black100: 0,
-        purple500: 0,
-        yellow1k: 0,
-        red5k: 0,
-        green25k: 0,
-      },
-    },
-    red_rock_5_5: {
-      colors: ['red5', 'green25', 'black100'],
-      limits: {
-        white1: 0,
-        pink2: 0,
-        brown3: 0,
-        red5: 100,
-        green25: 80,
-        black100: 80,
-        purple500: 0,
-        yellow1k: 0,
-        red5k: 0,
-        green25k: 0,
-      },
-      minLimits: {
-        white1: 0,
-        pink2: 0,
-        brown3: 0,
-        red5: 0,
-        green25: 0,
-        black100: 0,
-        purple500: 0,
-        yellow1k: 0,
-        red5k: 0,
-        green25k: 0,
-      },
-    },
-    wynn_1_3: {
-      colors: ['white1', 'red5', 'green25', 'black100'],
-      limits: {
-        white1: 40,
-        pink2: 0,
-        brown3: 0,
-        red5: 200,
-        green25: 40,
-        black100: 20,
-        purple500: 0,
-        yellow1k: 0,
-        red5k: 0,
-        green25k: 0,
-      },
-      minLimits: {
-        white1: 0,
-        pink2: 0,
-        brown3: 0,
-        red5: 0,
-        green25: 0,
-        black100: 0,
-        purple500: 0,
-        yellow1k: 0,
-        red5k: 0,
-        green25k: 0,
-      },
-    },
-    red_rock_bank: {
-      colors: ['white1', 'pink2', 'red5'],
-      limits: {
-        white1: 300,
-        pink2: 300,
-        brown3: 0,
-        red5: 60,
-        green25: 0,
-        black100: 0,
-        purple500: 0,
-        yellow1k: 0,
-        red5k: 0,
-        green25k: 0,
-      },
-      minLimits: {
-        white1: 20,
-        pink2: 20,
-        brown3: 0,
-        red5: 1,
-        green25: 0,
-        black100: 0,
-        purple500: 0,
-        yellow1k: 0,
-        red5k: 0,
-        green25k: 0,
-      },
-    },
-    wynn_bank: {
-      colors: ['white1', 'pink2', 'red5', 'black100'],
-      limits: {
-        white1: 200,
-        pink2: 70,
-        brown3: 0,
-        red5: 60,
-        green25: 0,
-        black100: 12,
-        purple500: 0,
-        yellow1k: 0,
-        red5k: 0,
-        green25k: 0,
-      },
-      minLimits: {
-        white1: 10,
-        pink2: 5,
-        brown3: 0,
-        red5: 2,
-        green25: 0,
-        black100: 0,
-        purple500: 0,
-        yellow1k: 0,
-        red5k: 0,
-        green25k: 0,
-      },
-    },
-    wsop_bank: {
-      colors: ['white1', 'pink2', 'red5'],
-      limits: {
-        white1: 200,
-        pink2: 100,
-        brown3: 0,
-        red5: 25,
-        green25: 0,
-        black100: 0,
-        purple500: 0,
-        yellow1k: 0,
-        red5k: 0,
-        green25k: 0,
-      },
-      minLimits: {
-        white1: 20,
-        pink2: 5,
-        brown3: 0,
-        red5: 1,
-        green25: 0,
-        black100: 0,
-        purple500: 0,
-        yellow1k: 0,
-        red5k: 0,
-        green25k: 0,
-      },
-    },
-    bellagio_bank: {
-      colors: ['white1', 'brown3', 'red5', 'black100'],
-      limits: {
-        white1: 200,
-        pink2: 0,
-        brown3: 70,
-        red5: 50,
-        green25: 0,
-        black100: 15,
-        purple500: 0,
-        yellow1k: 0,
-        red5k: 0,
-        green25k: 0,
-      },
-      minLimits: {
-        white1: 15,
-        pink2: 0,
-        brown3: 5,
-        red5: 5,
-        green25: 0,
-        black100: 1,
-        purple500: 0,
-        yellow1k: 0,
-        red5k: 0,
-        green25k: 0,
-      },
-    },
-    bellagio_1_3: {
-      colors: ['white1', 'brown3', 'red5', 'green25', 'black100'],
-      limits: {
-        white1: 25,
-        pink2: 0,
-        brown3: 10,
-        red5: 120,
-        green25: 40,
-        black100: 10,
-        purple500: 0,
-        yellow1k: 0,
-        red5k: 0,
-        green25k: 0,
-      },
-      minLimits: {
-        white1: 5,
-        pink2: 0,
-        brown3: 0,
-        red5: 10,
-        green25: 0,
-        black100: 0,
-        purple500: 0,
-        yellow1k: 0,
-        red5k: 0,
-        green25k: 0,
-      },
-    },
-    bellagio_2_5: {
-      colors: ['white1', 'brown3', 'red5', 'green25', 'black100', 'purple500'],
-      limits: {
-        white1: 15,
-        pink2: 0,
-        brown3: 10,
-        red5: 120,
-        green25: 40,
-        black100: 10,
-        purple500: 5,
-        yellow1k: 0,
-        red5k: 0,
-        green25k: 0,
-      },
-      minLimits: {
-        white1: 5,
-        pink2: 0,
-        brown3: 0,
-        red5: 10,
-        green25: 0,
-        black100: 0,
-        purple500: 0,
-        yellow1k: 0,
-        red5k: 0,
-        green25k: 0,
-      },
-    },
-    wynn_2_5: {
-      colors: ['white1', 'red5', 'green25', 'black100', 'purple500'],
-      limits: {
-        white1: 35,
-        pink2: 0,
-        brown3: 0,
-        red5: 120,
-        green25: 40,
-        black100: 10,
-        purple500: 5,
-        yellow1k: 0,
-        red5k: 0,
-        green25k: 0,
-      },
-      minLimits: {
-        white1: 0,
-        pink2: 0,
-        brown3: 0,
-        red5: 10,
-        green25: 0,
-        black100: 0,
-        purple500: 0,
-        yellow1k: 0,
-        red5k: 0,
-        green25k: 0,
-      },
-    },
-  }
-
-  /* ================= 锦标赛预设配置 ================= */
-  const TOURNAMENT_PRESETS = {
-    none: {
-      // 无预设时不修改颜色选择，保持用户当前的选择
-      limits: {
-        green25k: 60,
-        black100: 100,
-        purple500: 100,
-        yellow1k: 100,
-        red5k: 100,
-        blue100k: 40,
-        pink500k: 20,
-        orange1m: 20,
-        grey5m: 20,
-      },
-    },
-    day1_early: {
-      colors: ['black100', 'purple500', 'yellow1k', 'red5k', 'green25k'],
-      limits: {
-        green25k: 40,
-        black100: 60,
-        purple500: 40,
-        yellow1k: 40,
-        red5k: 40,
-        blue100k: 0,
-        pink500k: 0,
-        orange1m: 0,
-        grey5m: 0,
-      },
-    },
-    day1_first_color_up: {
-      colors: ['purple500', 'yellow1k', 'red5k', 'green25k', 'blue100k'],
-      limits: {
-        green25k: 25,
-        black100: 0,
-        purple500: 40,
-        yellow1k: 40,
-        red5k: 40,
-        blue100k: 15,
-        pink500k: 0,
-        orange1m: 0,
-        grey5m: 0,
-      },
-    },
-    day1_second_color_up: {
-      colors: ['yellow1k', 'red5k', 'green25k', 'blue100k'],
-      limits: {
-        green25k: 40,
-        black100: 0,
-        purple500: 0,
-        yellow1k: 40,
-        red5k: 60,
-        blue100k: 40,
-        pink500k: 0,
-        orange1m: 0,
-        grey5m: 0,
-      },
-    },
-    day2_first_color_up: {
-      colors: ['red5k', 'green25k', 'blue100k', 'pink500k'],
-      limits: {
-        green25k: 40,
-        black100: 0,
-        purple500: 0,
-        yellow1k: 0,
-        red5k: 60,
-        blue100k: 60,
-        pink500k: 40,
-        orange1m: 0,
-        grey5m: 0,
-      },
-    },
-    day2_second_color_up: {
-      colors: ['green25k', 'blue100k', 'pink500k', 'orange1m'],
-      limits: {
-        green25k: 60,
-        black100: 0,
-        purple500: 0,
-        yellow1k: 0,
-        red5k: 0,
-        blue100k: 60,
-        pink500k: 60,
-        orange1m: 20,
-        grey5m: 0,
-      },
-    },
-    final_table: {
-      colors: ['blue100k', 'pink500k', 'orange1m', 'grey5m'],
-      limits: {
-        green25k: 0,
-        black100: 0,
-        purple500: 0,
-        yellow1k: 0,
-        red5k: 0,
-        blue100k: 40,
-        pink500k: 60,
-        orange1m: 40,
-        grey5m: 20,
-      },
-    },
-  }
 
   /* ================= 筹码配置 ================= */
   const cashChipLimits = ref({
@@ -542,7 +138,6 @@
     round.value++
     userInput.value = ''
     feedback.value = 'idle'
-
     const { groups, total } = gameEngine.value.generate()
     chipGroups.value = groups as any
     correctValue.value = total
@@ -626,6 +221,30 @@
     newRound()
   })
 
+  watch(tournamentPreset, (key) => {
+    if (key === 'none') {
+      newRound()
+      return
+    }
+
+    const preset = TOURNAMENT_PRESETS[key]
+    if (!preset || !preset.limits) return
+
+    // ⭐️ 1️⃣ 直接盖弹窗里的 limits（包括 0）
+    tournamentChipLimits.value = {
+      ...tournamentChipLimits.value,
+      ...preset.limits,
+    }
+
+    // ⭐️ 2️⃣ 如果 preset 定义了颜色，就直接用它
+    if (preset.colors) {
+      tournamentColors.value = [...preset.colors]
+    }
+
+    // ⭐️ 3️⃣ 切换 preset = 新一轮
+    newRound()
+  })
+
   /* ================= 颜色切换只影响出题 ================= */
   watch(
     [enabledColors, tournamentColors],
@@ -641,6 +260,34 @@
     },
     { deep: true }
   )
+  watch(cashPreset, (key) => {
+    if (key === 'none') {
+      newRound()
+      return
+    }
+
+    const preset = CASH_PRESETS[key]
+    if (!preset || !preset.limits) return
+
+    // ⭐️ 直接盖弹窗里的值（包括 0）
+    cashChipLimits.value = {
+      ...cashChipLimits.value,
+      ...preset.limits,
+    }
+
+    // 如果你希望：只用 preset 里的颜色（可选）
+    if (preset.colors) {
+      enabledColors.value = [...preset.colors]
+    }
+
+    // ⭐️ 切换 preset = 新一轮
+    newRound()
+  })
+
+  watch(cashPreset, () => {
+    // 切换现金赛 preset，立刻开启新一轮
+    newRound()
+  })
 
   /* ================= 游戏引擎 ================= */
   const gameEngine = computed(() => {

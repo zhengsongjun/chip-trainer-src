@@ -2,6 +2,9 @@
   "name": "chip-trainer",
   "version": "0.0.0",
   "private": true,
+  "workspaces": [
+    "functions"
+  ],
   "type": "module",
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
@@ -19,6 +22,7 @@
     "echarts": "^6.0.0",
     "element-plus": "^2.13.1",
     "firebase": "^12.8.0",
+    "firebase-admin": "^13.6.0",
     "pinia": "^3.0.3",
     "pinia-plugin-persistedstate": "^4.7.1",
     "pokersolver": "^2.1.4",
