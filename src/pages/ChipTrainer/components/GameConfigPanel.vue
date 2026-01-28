@@ -112,36 +112,16 @@
             @update:model-value="emit('update:enabledColors', $event)"
           >
             <el-space size="large">
-              <el-checkbox label="white1" v-if="isCashColorEnabled('white1')"
-                >{{ white }} ($1)</el-checkbox
-              >
-              <el-checkbox label="pink2" v-if="isCashColorEnabled('pink2')"
-                >{{ pink }} ($2)</el-checkbox
-              >
-              <el-checkbox label="brown3" v-if="isCashColorEnabled('brown3')"
-                >{{ brown }} ($3)</el-checkbox
-              >
-              <el-checkbox label="red5" v-if="isCashColorEnabled('red5')"
-                >{{ red }} ($5)</el-checkbox
-              >
-              <el-checkbox v-if="isCashColorEnabled('green25')" label="green25"
-                >{{ green }} ($25)</el-checkbox
-              >
-              <el-checkbox v-if="isCashColorEnabled('black100')" label="black100"
-                >{{ black }} ($100)</el-checkbox
-              >
-              <el-checkbox v-if="isCashColorEnabled('purple500')" label="purple500"
-                >{{ purple }} ($500)</el-checkbox
-              >
-              <el-checkbox v-if="isCashColorEnabled('yellow1k')" label="yellow1k"
-                >{{ gold }} ($1k)</el-checkbox
-              >
-              <el-checkbox v-if="isCashColorEnabled('red5k')" label="red5k"
-                >{{ red }} ($5k)</el-checkbox
-              >
-              <el-checkbox v-if="isCashColorEnabled('green25k')" label="green25k"
-                >{{ green }} ($25k)</el-checkbox
-              >
+              <el-checkbox label="white1">{{ white }} ($1)</el-checkbox>
+              <el-checkbox label="pink2">{{ pink }} ($2)</el-checkbox>
+              <el-checkbox label="brown3">{{ brown }} ($3)</el-checkbox>
+              <el-checkbox label="red5">{{ red }} ($5)</el-checkbox>
+              <el-checkbox label="green25">{{ green }} ($25)</el-checkbox>
+              <el-checkbox label="black100">{{ black }} ($100)</el-checkbox>
+              <el-checkbox label="purple500">{{ purple }} ($500)</el-checkbox>
+              <el-checkbox label="yellow1k">{{ gold }} ($1k)</el-checkbox>
+              <el-checkbox label="red5k">{{ red }} ($5k)</el-checkbox>
+              <el-checkbox label="green25k">{{ green }} ($25k)</el-checkbox>
             </el-space>
           </el-checkbox-group>
         </el-form-item>
@@ -170,33 +150,15 @@
           >
             <el-space size="large">
               <!-- 按面额从小到大排列 -->
-              <el-checkbox v-if="isTournamentPresetColorEnabled('black100')" label="black100"
-                >{{ black }}（100）</el-checkbox
-              >
-              <el-checkbox v-if="isTournamentPresetColorEnabled('purple500')" label="purple500"
-                >{{ purple }}（500）</el-checkbox
-              >
-              <el-checkbox v-if="isTournamentPresetColorEnabled('yellow1k')" label="yellow1k"
-                >{{ gold }}（1k）</el-checkbox
-              >
-              <el-checkbox v-if="isTournamentPresetColorEnabled('red5k')" label="red5k"
-                >{{ red }}（5k）</el-checkbox
-              >
-              <el-checkbox v-if="isTournamentPresetColorEnabled('green25k')" label="green25k"
-                >{{ green }}（25k）</el-checkbox
-              >
-              <el-checkbox v-if="isTournamentPresetColorEnabled('blue100k')" label="blue100k"
-                >{{ blue }}（100k）</el-checkbox
-              >
-              <el-checkbox v-if="isTournamentPresetColorEnabled('pink500k')" label="pink500k"
-                >{{ pink }}（500k）</el-checkbox
-              >
-              <el-checkbox v-if="isTournamentPresetColorEnabled('orange1m')" label="orange1m"
-                >{{ orange }}（1M）</el-checkbox
-              >
-              <el-checkbox v-if="isTournamentPresetColorEnabled('grey5m')" label="grey5m"
-                >{{ grey }}（5M）</el-checkbox
-              >
+              <el-checkbox label="black100">{{ black }}（100）</el-checkbox>
+              <el-checkbox label="purple500">{{ purple }}（500）</el-checkbox>
+              <el-checkbox label="yellow1k">{{ gold }}（1k）</el-checkbox>
+              <el-checkbox label="red5k">{{ red }}（5k）</el-checkbox>
+              <el-checkbox label="green25k">{{ green }}（25k）</el-checkbox>
+              <el-checkbox label="blue100k">{{ blue }}（100k）</el-checkbox>
+              <el-checkbox label="pink500k">{{ pink }}（500k）</el-checkbox>
+              <el-checkbox label="orange1m">{{ orange }}（1M）</el-checkbox>
+              <el-checkbox label="grey5m">{{ grey }}（5M）</el-checkbox>
             </el-space>
           </el-checkbox-group>
         </el-form-item>

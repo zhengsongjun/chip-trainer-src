@@ -38,9 +38,9 @@
               <ActivatedServices />
             </el-tab-pane>
 
-            <!-- <el-tab-pane label="个人训练统计">
+            <el-tab-pane label="个人训练统计">
               <TrainingStats />
-            </el-tab-pane> -->
+            </el-tab-pane>
           </el-tabs>
         </div>
       </div>

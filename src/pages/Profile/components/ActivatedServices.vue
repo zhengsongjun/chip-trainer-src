@@ -140,8 +140,8 @@
 
 <template>
   <div class="ui-panel" v-loading="pageLoading">
-    <div class="section-title-wrap">
-      <div class="section-header" v-if="services.length">
+    <div class="section-header">
+      <div class="section-title-wrap" v-if="services.length">
         <h2 class="section-title">已激活服务</h2>
         <span class="section-desc">查看当前账号已开通的功能</span>
       </div>

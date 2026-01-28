@@ -48,7 +48,7 @@
         class="training-type-select"
       >
         <el-option label="筹码反应" value="chip" />
-        <el-option label="牌面分析" value="board" />
+        <!-- <el-option label="牌面分析" value="board" /> -->
       </el-select>
 
       <div class="time-panel" :class="{ active: range.type === 'custom' }">
