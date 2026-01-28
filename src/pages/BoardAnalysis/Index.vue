@@ -31,18 +31,18 @@
   // 7 Card Stud 明牌配置 - 每个座位独立配置（2号位和7号位不参与游戏）
   const studCardsConfig = ref({
     1: {
-      rotation: 0,      // 旋转角度（单位：度）
-      startLeft: 60,     // 相对hole cards的水平位置（单位：px）
-      startTop: -60,      // 相对hole cards的垂直位置（单位：px）
-      offsetX: 15,       // 每张牌的水平叠加偏移（单位：px）
-      offsetY: -15,      // 每张牌的垂直叠加偏移（单位：px，负数向上）
+      rotation: 0, // 旋转角度（单位：度）
+      startLeft: 60, // 相对hole cards的水平位置（单位：px）
+      startTop: -60, // 相对hole cards的垂直位置（单位：px）
+      offsetX: 15, // 每张牌的水平叠加偏移（单位：px）
+      offsetY: -15, // 每张牌的垂直叠加偏移（单位：px，负数向上）
     },
     3: {
       rotation: 0,
       startLeft: 60,
       startTop: -100,
       offsetX: 15,
-      offsetY: -15,       // 正数向下
+      offsetY: -15, // 正数向下
     },
     4: {
       rotation: 0,
@@ -76,23 +76,26 @@
 
   // 背景图位置控制
   const backgroundPosition = ref({
-    size: '125%',        // 背景图大小 (可以是百分比或 px)
-    x: 'center',         // 水平位置 (可以是: left, center, right, 或百分比/px)
-    y: '41%',            // 垂直位置 (可以是: top, center, bottom, 或百分比/px)
+    size: '125%', // 背景图大小 (可以是百分比或 px)
+    x: 'center', // 水平位置 (可以是: left, center, right, 或百分比/px)
+    y: '41%', // 垂直位置 (可以是: top, center, bottom, 或百分比/px)
   })
 
   // 公共牌位置控制
   const communityCardsPosition = ref({
-    top: '38%',      // 距离顶部的位置
-    left: '46%',     // 距离左侧的位置
-    width: 260,      // 容器宽度（单位：px）
+    top: '38%', // 距离顶部的位置
+    left: '46%', // 距离左侧的位置
+    width: 260, // 容器宽度（单位：px）
   })
   const activeSeats = ref<number[]>([])
 
   function pickRandomSeats(count: number): number[] {
     // 7 Card Stud 和 Razz 模式下，只使用 1, 3, 4, 5, 6, 8 号座位（排除 2 和 7）
     // Badugi 模式使用所有8个座位
-    const allSeats = (gameMode.value === '7stud' || gameMode.value === 'razz') ? [1, 3, 4, 5, 6, 8] : [1, 2, 3, 4, 5, 6, 7, 8]
+    const allSeats =
+      gameMode.value === '7stud' || gameMode.value === 'razz'
+        ? [1, 3, 4, 5, 6, 8]
+        : [1, 2, 3, 4, 5, 6, 7, 8]
     return shuffle(allSeats)
       .slice(0, count)
       .sort((a, b) => a - b)
@@ -127,7 +130,9 @@
 
   // 获取 Stud 牌的配置（位置、角度、叠加方向）
   function getStudCardConfig(seat: number) {
-    return studCardsConfig.value[seat as keyof typeof studCardsConfig.value] || studCardsConfig.value[1]
+    return (
+      studCardsConfig.value[seat as keyof typeof studCardsConfig.value] || studCardsConfig.value[1]
+    )
   }
 
   // 计算 Stud 牌的偏移
@@ -429,11 +434,25 @@
    * Low 规则：每张牌都 ≤8，不能有对子，同花和顺子不影响牌力
    * 比较时高牌更低的获胜
    */
-  function getLowHand(holeCards: string[], board: string[], studCards?: string[]): { cards: string[]; valid: boolean } | null {
+  function getLowHand(
+    holeCards: string[],
+    board: string[],
+    studCards?: string[]
+  ): { cards: string[]; valid: boolean } | null {
     const rankValues: Record<string, number> = {
-      'A': 1, '2': 2, '3': 3, '4': 4, '5': 5,
-      '6': 6, '7': 7, '8': 8, '9': 9, 'T': 10,
-      'J': 11, 'Q': 12, 'K': 13
+      A: 1,
+      '2': 2,
+      '3': 3,
+      '4': 4,
+      '5': 5,
+      '6': 6,
+      '7': 7,
+      '8': 8,
+      '9': 9,
+      T: 10,
+      J: 11,
+      Q: 12,
+      K: 13,
     }
 
     let allCards: string[]
@@ -486,12 +505,15 @@
   /**
    * 检查一手牌是否是有效的 Low 牌 (8 or better)
    */
-  function checkLowHand(cards: string[], rankValues: Record<string, number>): { cards: string[]; valid: boolean } {
-    const ranks = cards.map(c => c[0])
-    const values = ranks.map(r => rankValues[r])
+  function checkLowHand(
+    cards: string[],
+    rankValues: Record<string, number>
+  ): { cards: string[]; valid: boolean } {
+    const ranks = cards.map((c) => c[0])
+    const values = ranks.map((r) => rankValues[r])
 
     // 检查是否所有牌都 ≤8
-    const allUnder8 = values.every(v => v <= 8)
+    const allUnder8 = values.every((v) => v <= 8)
     if (!allUnder8) {
       return { cards: [], valid: false }
     }
@@ -501,7 +523,7 @@
     for (const v of values) {
       rankCounts.set(v, (rankCounts.get(v) || 0) + 1)
     }
-    const hasPair = Array.from(rankCounts.values()).some(count => count > 1)
+    const hasPair = Array.from(rankCounts.values()).some((count) => count > 1)
     if (hasPair) {
       return { cards: [], valid: false }
     }
@@ -512,13 +534,17 @@
   /**
    * 比较两手 Low 牌，返回负数表示 hand1 更好（更低）
    */
-  function compareLowHands(hand1: string[], hand2: string[], rankValues: Record<string, number>): number {
-    const values1 = hand1.map(c => rankValues[c[0]]).sort((a, b) => b - a) // 从大到小
-    const values2 = hand2.map(c => rankValues[c[0]]).sort((a, b) => b - a)
+  function compareLowHands(
+    hand1: string[],
+    hand2: string[],
+    rankValues: Record<string, number>
+  ): number {
+    const values1 = hand1.map((c) => rankValues[c[0]]).sort((a, b) => b - a) // 从大到小
+    const values2 = hand2.map((c) => rankValues[c[0]]).sort((a, b) => b - a)
 
     for (let i = 0; i < 5; i++) {
       if (values1[i] < values2[i]) return -1 // hand1 更好
-      if (values1[i] > values2[i]) return 1  // hand2 更好
+      if (values1[i] > values2[i]) return 1 // hand2 更好
     }
     return 0 // 平局
   }
@@ -529,13 +555,23 @@
    */
   function getA5LowScore(cards: string[]): { score: number; highCards: number[] } {
     const rankValues: Record<string, number> = {
-      'A': 1, '2': 2, '3': 3, '4': 4, '5': 5,
-      '6': 6, '7': 7, '8': 8, '9': 9, 'T': 10,
-      'J': 11, 'Q': 12, 'K': 13
+      A: 1,
+      '2': 2,
+      '3': 3,
+      '4': 4,
+      '5': 5,
+      '6': 6,
+      '7': 7,
+      '8': 8,
+      '9': 9,
+      T: 10,
+      J: 11,
+      Q: 12,
+      K: 13,
     }
 
-    const ranks = cards.map(c => c[0])
-    const values = ranks.map(r => rankValues[r])
+    const ranks = cards.map((c) => c[0])
+    const values = ranks.map((r) => rankValues[r])
 
     // 统计每个点数的数量
     const rankCounts = new Map<number, number>()
@@ -547,10 +583,14 @@
     const counts = Array.from(rankCounts.values()).sort((a, b) => b - a)
     let handType = 0 // 0=高牌, 1=一对, 2=两对, 3=三条, 4=葫芦, 5=四条
 
-    if (counts[0] === 4) handType = 5 // 四条
-    else if (counts[0] === 3 && counts[1] === 2) handType = 4 // 葫芦
-    else if (counts[0] === 3) handType = 3 // 三条
-    else if (counts[0] === 2 && counts[1] === 2) handType = 2 // 两对
+    if (counts[0] === 4)
+      handType = 5 // 四条
+    else if (counts[0] === 3 && counts[1] === 2)
+      handType = 4 // 葫芦
+    else if (counts[0] === 3)
+      handType = 3 // 三条
+    else if (counts[0] === 2 && counts[1] === 2)
+      handType = 2 // 两对
     else if (counts[0] === 2) handType = 1 // 一对
 
     // 获取高牌（从大到小排序）
@@ -566,14 +606,24 @@
    */
   function get27LowScore(cards: string[]): { score: number; highCards: number[] } {
     const rankValues: Record<string, number> = {
-      'A': 14, '2': 2, '3': 3, '4': 4, '5': 5,
-      '6': 6, '7': 7, '8': 8, '9': 9, 'T': 10,
-      'J': 11, 'Q': 12, 'K': 13
+      A: 14,
+      '2': 2,
+      '3': 3,
+      '4': 4,
+      '5': 5,
+      '6': 6,
+      '7': 7,
+      '8': 8,
+      '9': 9,
+      T: 10,
+      J: 11,
+      Q: 12,
+      K: 13,
     }
 
-    const ranks = cards.map(c => c[0])
-    const suits = cards.map(c => c[1])
-    const values = ranks.map(r => rankValues[r])
+    const ranks = cards.map((c) => c[0])
+    const suits = cards.map((c) => c[1])
+    const values = ranks.map((r) => rankValues[r])
 
     // 统计每个点数的数量
     const rankCounts = new Map<number, number>()
@@ -582,7 +632,7 @@
     }
 
     // 判断是否同花
-    const isFlush = suits.every(s => s === suits[0])
+    const isFlush = suits.every((s) => s === suits[0])
 
     // 判断是否顺子
     const sortedValues = [...values].sort((a, b) => a - b)
@@ -595,13 +645,20 @@
     const counts = Array.from(rankCounts.values()).sort((a, b) => b - a)
     let handType = 0 // 0=高牌
 
-    if (isFlush && isStraight) handType = 8 // 同花顺
-    else if (counts[0] === 4) handType = 7 // 四条
-    else if (counts[0] === 3 && counts[1] === 2) handType = 6 // 葫芦
-    else if (isFlush) handType = 5 // 同花
-    else if (isStraight) handType = 4 // 顺子
-    else if (counts[0] === 3) handType = 3 // 三条
-    else if (counts[0] === 2 && counts[1] === 2) handType = 2 // 两对
+    if (isFlush && isStraight)
+      handType = 8 // 同花顺
+    else if (counts[0] === 4)
+      handType = 7 // 四条
+    else if (counts[0] === 3 && counts[1] === 2)
+      handType = 6 // 葫芦
+    else if (isFlush)
+      handType = 5 // 同花
+    else if (isStraight)
+      handType = 4 // 顺子
+    else if (counts[0] === 3)
+      handType = 3 // 三条
+    else if (counts[0] === 2 && counts[1] === 2)
+      handType = 2 // 两对
     else if (counts[0] === 2) handType = 1 // 一对
 
     // 获取高牌（从大到小排序）
@@ -614,7 +671,10 @@
   /**
    * 获取 Razz 模式下的最佳 Low 牌
    */
-  function getRazzLowHand(holeCards: string[], studCards: string[]): { cards: string[]; score: number; highCards: number[] } {
+  function getRazzLowHand(
+    holeCards: string[],
+    studCards: string[]
+  ): { cards: string[]; score: number; highCards: number[] } {
     const allCards = [...holeCards, ...studCards]
     const allSolverCards = allCards.map(toSolverCard)
     const combos = combinations(allSolverCards, 5)
@@ -624,8 +684,12 @@
     for (const combo of combos) {
       const scoreResult = gameType.value === 'a5-low' ? getA5LowScore(combo) : get27LowScore(combo)
 
-      if (!bestLow || scoreResult.score < bestLow.score ||
-          (scoreResult.score === bestLow.score && compareHighCards(scoreResult.highCards, bestLow.highCards) < 0)) {
+      if (
+        !bestLow ||
+        scoreResult.score < bestLow.score ||
+        (scoreResult.score === bestLow.score &&
+          compareHighCards(scoreResult.highCards, bestLow.highCards) < 0)
+      ) {
         bestLow = { cards: combo, ...scoreResult }
       }
     }
@@ -652,23 +716,39 @@
    * 3. 如果有相同花色，只能用一张（选点数最低的）
    * 4. 点数越低越好（A=1）
    */
-  function getBadugiHand(cards: string[]): { validCards: string[]; count: number; ranks: number[] } {
+  function getBadugiHand(cards: string[]): {
+    validCards: string[]
+    count: number
+    ranks: number[]
+  } {
     const rankValues: Record<string, number> = {
-      'A': 1, '2': 2, '3': 3, '4': 4, '5': 5,
-      '6': 6, '7': 7, '8': 8, '9': 9, 'T': 10,
-      'J': 11, 'Q': 12, 'K': 13
+      A: 1,
+      '2': 2,
+      '3': 3,
+      '4': 4,
+      '5': 5,
+      '6': 6,
+      '7': 7,
+      '8': 8,
+      '9': 9,
+      T: 10,
+      J: 11,
+      Q: 12,
+      K: 13,
     }
 
     // 转换为solver格式
     const solverCards = cards.map(toSolverCard)
 
     // 按点数从小到大排序
-    const sortedCards = solverCards.map(c => ({
-      card: c,
-      rank: c[0],
-      suit: c[1],
-      value: rankValues[c[0]]
-    })).sort((a, b) => a.value - b.value)
+    const sortedCards = solverCards
+      .map((c) => ({
+        card: c,
+        rank: c[0],
+        suit: c[1],
+        value: rankValues[c[0]],
+      }))
+      .sort((a, b) => a.value - b.value)
 
     // 贪心算法：按点数从小到大，选择不同花色、不同点数的牌
     const validCards: string[] = []
@@ -684,12 +764,12 @@
     }
 
     // 获取有效牌的点数（从大到小排序用于比较）
-    const ranks = validCards.map(c => rankValues[c[0]]).sort((a, b) => b - a)
+    const ranks = validCards.map((c) => rankValues[c[0]]).sort((a, b) => b - a)
 
     return {
       validCards,
       count: validCards.length,
-      ranks
+      ranks,
     }
   }
 
@@ -697,7 +777,10 @@
    * 比较两手Badugi牌
    * 返回负数表示hand1更好（更低）
    */
-  function compareBadugiHands(hand1: { count: number; ranks: number[] }, hand2: { count: number; ranks: number[] }): number {
+  function compareBadugiHands(
+    hand1: { count: number; ranks: number[] },
+    hand2: { count: number; ranks: number[] }
+  ): number {
     // 先比较有效牌的数量，数量多的获胜
     if (hand1.count > hand2.count) return -1
     if (hand1.count < hand2.count) return 1
@@ -705,7 +788,7 @@
     // 数量相同，从高到低比较每张牌的点数
     for (let i = 0; i < hand1.count; i++) {
       if (hand1.ranks[i] < hand2.ranks[i]) return -1 // hand1的高牌更低，更好
-      if (hand1.ranks[i] > hand2.ranks[i]) return 1  // hand2的高牌更低，更好
+      if (hand1.ranks[i] > hand2.ranks[i]) return 1 // hand2的高牌更低，更好
     }
 
     return 0 // 平局
@@ -731,17 +814,22 @@
       // 找出最好的 Low 牌
       let bestLow = solvedLow[0]
       for (const player of solvedLow) {
-        if (player.lowHand.score < bestLow.lowHand.score ||
-            (player.lowHand.score === bestLow.lowHand.score &&
-             compareHighCards(player.lowHand.highCards, bestLow.lowHand.highCards) < 0)) {
+        if (
+          player.lowHand.score < bestLow.lowHand.score ||
+          (player.lowHand.score === bestLow.lowHand.score &&
+            compareHighCards(player.lowHand.highCards, bestLow.lowHand.highCards) < 0)
+        ) {
           bestLow = player
         }
       }
 
       // 找出所有平局的玩家
       const lowWinnerSeats = solvedLow
-        .filter((p) => p.lowHand.score === bestLow.lowHand.score &&
-                       compareHighCards(p.lowHand.highCards, bestLow.lowHand.highCards) === 0)
+        .filter(
+          (p) =>
+            p.lowHand.score === bestLow.lowHand.score &&
+            compareHighCards(p.lowHand.highCards, bestLow.lowHand.highCards) === 0
+        )
         .map((p) => p.seat)
         .sort((a, b) => a - b)
 
@@ -832,7 +920,10 @@
     }
 
     // 其他模式（High 或 High-Low）
-    if (selectedHighSeats.value.length === 0 && (gameType.value === 'high' || selectedLowSeats.value.length === 0)) {
+    if (
+      selectedHighSeats.value.length === 0 &&
+      (gameType.value === 'high' || selectedLowSeats.value.length === 0)
+    ) {
       ElMessage.warning('Please select the winning player(s) first')
       return
     }
@@ -900,9 +991,19 @@
 
       if (validLowPlayers.length > 0) {
         const rankValues: Record<string, number> = {
-          'A': 1, '2': 2, '3': 3, '4': 4, '5': 5,
-          '6': 6, '7': 7, '8': 8, '9': 9, 'T': 10,
-          'J': 11, 'Q': 12, 'K': 13
+          A: 1,
+          '2': 2,
+          '3': 3,
+          '4': 4,
+          '5': 5,
+          '6': 6,
+          '7': 7,
+          '8': 8,
+          '9': 9,
+          T: 10,
+          J: 11,
+          Q: 12,
+          K: 13,
         }
 
         // 找出最好的 Low 牌
@@ -915,7 +1016,9 @@
 
         // 找出所有平局的玩家
         lowWinnerSeats = validLowPlayers
-          .filter((p) => compareLowHands(p.lowHand!.cards, bestLow.lowHand!.cards, rankValues) === 0)
+          .filter(
+            (p) => compareLowHands(p.lowHand!.cards, bestLow.lowHand!.cards, rankValues) === 0
+          )
           .map((p) => p.seat)
           .sort((a, b) => a - b)
 
@@ -1023,11 +1126,15 @@
       />
 
       <!-- 训练舞台 -->
-      <div class="chip-stage board" ref="boardRef" :style="{
-        backgroundImage: `url(${bg})`,
-        backgroundSize: backgroundPosition.size,
-        backgroundPosition: `${backgroundPosition.x} ${backgroundPosition.y}`
-      }">
+      <div
+        class="chip-stage board"
+        ref="boardRef"
+        :style="{
+          backgroundImage: `url(${bg})`,
+          backgroundSize: backgroundPosition.size,
+          backgroundPosition: `${backgroundPosition.x} ${backgroundPosition.y}`,
+        }"
+      >
         <div class="board-overlay">
           <TextureAnalysisPanel :board-cards="boardCards" anchor-selector=".board-overlay" />
           <!-- 公共牌 (仅在非 7 Card Stud、Razz 和 Badugi 模式下显示) -->
@@ -1076,7 +1183,11 @@
                   <CardBack />
                 </div>
                 <!-- Stud Cards (7 Card Stud / Razz) -->
-                <div v-if="(gameMode === '7stud' || gameMode === 'razz') && playerStudCards[seat]" class="stud-cards-container" :style="getStudCardContainerStyle(seat)">
+                <div
+                  v-if="(gameMode === '7stud' || gameMode === 'razz') && playerStudCards[seat]"
+                  class="stud-cards-container"
+                  :style="getStudCardContainerStyle(seat)"
+                >
                   <div
                     v-for="(card, i) in playerStudCards[seat]"
                     :key="`stud-${i}`"
@@ -1085,7 +1196,7 @@
                       top: `${getStudCardOffset(seat, i).top}px`,
                       left: `${getStudCardOffset(seat, i).left}px`,
                       transform: `rotate(${getStudCardRotation(seat)}deg)`,
-                      zIndex: 100 + i
+                      zIndex: 100 + i,
                     }"
                   >
                     <CardBack />
@@ -1111,7 +1222,11 @@
                   />
                 </div>
                 <!-- Stud Cards (7 Card Stud / Razz) -->
-                <div v-if="(gameMode === '7stud' || gameMode === 'razz') && playerStudCards[seat]" class="stud-cards-container" :style="getStudCardContainerStyle(seat)">
+                <div
+                  v-if="(gameMode === '7stud' || gameMode === 'razz') && playerStudCards[seat]"
+                  class="stud-cards-container"
+                  :style="getStudCardContainerStyle(seat)"
+                >
                   <div
                     v-for="(card, i) in playerStudCards[seat]"
                     :key="`stud-${i}`"
@@ -1120,7 +1235,7 @@
                       top: `${getStudCardOffset(seat, i).top}px`,
                       left: `${getStudCardOffset(seat, i).left}px`,
                       transform: `rotate(${getStudCardRotation(seat)}deg)`,
-                      zIndex: 100 + i
+                      zIndex: 100 + i,
                     }"
                   >
                     <CardFace

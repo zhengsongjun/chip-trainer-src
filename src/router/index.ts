@@ -18,6 +18,7 @@ const router = createRouter({
       path: '/',
       component: MainLayout,
       meta: { requiresAuth: true },
+      redirect: '/profile',
       children: [
         {
           path: 'chip-trainer',

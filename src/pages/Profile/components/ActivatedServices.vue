@@ -10,7 +10,7 @@
   /* ================= 用户 ================= */
   const email = ref<string | null>(null)
   const userId = ref<string | null>(null)
-
+  const pageLoading = ref(true)
   /* ================= 服务 ================= */
   type ServiceItem = {
     name: string
@@ -25,10 +25,19 @@
 
   onMounted(() => {
     onAuthStateChanged(auth, async (user) => {
-      if (!user) return
+      if (!user) {
+        pageLoading.value = false
+        return
+      }
+
       email.value = user.email
       userId.value = user.uid
-      await loadUserServices()
+
+      try {
+        await loadUserServices()
+      } finally {
+        pageLoading.value = false
+      }
     })
   })
 
@@ -130,10 +139,14 @@
 </script>
 
 <template>
-  <div class="ui-panel">
-    <div class="section-header">
-      <h2 class="section-title">已激活服务</h2>
-      <el-button type="primary" size="small" @click="openActivateDialog"> 激活服务 </el-button>
+  <div class="ui-panel" v-loading="pageLoading">
+    <div class="section-header" v-if="services.length">
+      <div class="section-title-wrap">
+        <h2 class="section-title">已激活服务</h2>
+        <span class="section-desc">查看当前账号已开通的功能</span>
+      </div>
+
+      <el-button type="primary" size="default" @click="openActivateDialog"> 激活服务 </el-button>
     </div>
 
     <el-table v-if="services.length" :data="services">
@@ -142,7 +155,8 @@
     </el-table>
     <div v-else class="empty-wrapper">
       <div class="wechat-box">
-        <p class="wechat-text">暂无服务,添加微信获取服务</p>
+        <p class="wechat-text">暂无已激活服务</p>
+        <p class="wechat-sub">添加微信获取服务支持</p>
         <img class="wechat-img" :src="img" alt="微信二维码" />
       </div>
     </div>
@@ -159,27 +173,65 @@
 <style scoped>
   .empty-wrapper {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 40px 0;
+    justify-content: center;
   }
 
   .wechat-box {
-    margin-top: 16px;
+    background: #fff;
+    padding: 0px 40px;
+    border-radius: 12px;
     text-align: center;
   }
 
   .wechat-text {
-    font-size: 14px;
-    color: #606266;
-    margin-bottom: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #303133;
+    margin-bottom: 4px;
+  }
+
+  .wechat-sub {
+    font-size: 13px;
+    color: #909399;
+    margin-bottom: 20px;
   }
 
   .wechat-img {
-    width: 160px;
-    height: 160px;
+    height: 454px;
     object-fit: contain;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  /* 左侧标题区 */
+  .section-title-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #303133;
+    line-height: 1.2;
+    margin: 0;
+  }
+
+  .section-desc {
+    font-size: 13px;
+    color: #909399;
+  }
+
+  /* 右侧按钮 */
+  .section-header .el-button {
+    padding: 8px 16px;
+    font-weight: 500;
   }
 </style>

@@ -1,5 +1,16 @@
 <script setup lang="ts">
+  import { computed } from 'vue'
   import useChipTraining from '../../../i18n/customHook/chipTraining/useChipTraining'
+  import {
+    CashPresetKey,
+    createCashColorChecker,
+    getCashPresetOptions,
+  } from '../presetsConfig/cashPresets'
+  import {
+    createTournamentColorChecker,
+    getTournamentPresetOptions,
+    TournamentPresetKey,
+  } from '../presetsConfig/tournamentPresets'
 
   const {
     cashGame,
@@ -19,17 +30,25 @@
     grey,
   } = useChipTraining()
 
-  defineProps<{
+  // defineProps<{
+  //   gameType: 'cash' | 'tournament'
+
+  //   /* cash */
+  //   enabledColors: string[]
+  //   whiteRange?: '1-20' | '20-60'
+  //   cashPreset: string
+
+  //   /* tournament */
+  //   tournamentColors: string[]
+  //   blackRange?: '1-19' | '20-60'
+  //   tournamentPreset: string
+  // }>()
+
+  const props = defineProps<{
     gameType: 'cash' | 'tournament'
-
-    /* cash */
     enabledColors: string[]
-    whiteRange?: '1-20' | '20-60'
     cashPreset: string
-
-    /* tournament */
     tournamentColors: string[]
-    blackRange?: '1-19' | '20-60'
     tournamentPreset: string
   }>()
 
@@ -47,6 +66,14 @@
     (e: 'update:blackRange', val: '1-19' | '20-60'): void
     (e: 'update:tournamentPreset', val: string): void
   }>()
+
+  const isCashColorEnabled = computed(() => {
+    return createCashColorChecker(props.cashPreset as CashPresetKey)
+  })
+
+  const isTournamentPresetColorEnabled = computed(() => {
+    return createTournamentColorChecker(props.tournamentPreset as TournamentPresetKey)
+  })
 </script>
 
 <template>
@@ -71,17 +98,11 @@
             @update:model-value="emit('update:cashPreset', $event)"
             style="width: 240px"
           >
-            <el-option label="无预设" value="none" />
-            <el-option label="1/3 NLH Red Rock" value="red_rock_1_3" />
-            <el-option label="5/5 NLH Red Rock" value="red_rock_5_5" />
-            <el-option label="1/3 NLH Wynn" value="wynn_1_3" />
-            <el-option label="2/5 NLH Wynn" value="wynn_2_5" />
-            <el-option label="1/3 NLH Bellagio" value="bellagio_1_3" />
-            <el-option label="2/5 NLH Bellagio" value="bellagio_2_5" />
-            <el-option label="Red Rock Bank" value="red_rock_bank" />
-            <el-option label="Wynn Bank" value="wynn_bank" />
-            <el-option label="WSOP Bank" value="wsop_bank" />
-            <el-option label="Bellagio Bank" value="bellagio_bank" />
+            <el-option
+              v-for="item in getCashPresetOptions()"
+              :label="item.label"
+              :value="item.value"
+            />
           </el-select>
         </el-form-item>
 
@@ -91,16 +112,36 @@
             @update:model-value="emit('update:enabledColors', $event)"
           >
             <el-space size="large">
-              <el-checkbox label="white1">{{ white }} ($1)</el-checkbox>
-              <el-checkbox label="pink2">{{ pink }} ($2)</el-checkbox>
-              <el-checkbox label="brown3">{{ brown }} ($3)</el-checkbox>
-              <el-checkbox label="red5">{{ red }} ($5)</el-checkbox>
-              <el-checkbox label="green25">{{ green }} ($25)</el-checkbox>
-              <el-checkbox label="black100">{{ black }} ($100)</el-checkbox>
-              <el-checkbox label="purple500">{{ purple }} ($500)</el-checkbox>
-              <el-checkbox label="yellow1k">{{ gold }} ($1k)</el-checkbox>
-              <el-checkbox label="red5k">{{ red }} ($5k)</el-checkbox>
-              <el-checkbox label="green25k">{{ green }} ($25k)</el-checkbox>
+              <el-checkbox label="white1" v-if="isCashColorEnabled('white1')"
+                >{{ white }} ($1)</el-checkbox
+              >
+              <el-checkbox label="pink2" v-if="isCashColorEnabled('pink2')"
+                >{{ pink }} ($2)</el-checkbox
+              >
+              <el-checkbox label="brown3" v-if="isCashColorEnabled('brown3')"
+                >{{ brown }} ($3)</el-checkbox
+              >
+              <el-checkbox label="red5" v-if="isCashColorEnabled('red5')"
+                >{{ red }} ($5)</el-checkbox
+              >
+              <el-checkbox v-if="isCashColorEnabled('green25')" label="green25"
+                >{{ green }} ($25)</el-checkbox
+              >
+              <el-checkbox v-if="isCashColorEnabled('black100')" label="black100"
+                >{{ black }} ($100)</el-checkbox
+              >
+              <el-checkbox v-if="isCashColorEnabled('purple500')" label="purple500"
+                >{{ purple }} ($500)</el-checkbox
+              >
+              <el-checkbox v-if="isCashColorEnabled('yellow1k')" label="yellow1k"
+                >{{ gold }} ($1k)</el-checkbox
+              >
+              <el-checkbox v-if="isCashColorEnabled('red5k')" label="red5k"
+                >{{ red }} ($5k)</el-checkbox
+              >
+              <el-checkbox v-if="isCashColorEnabled('green25k')" label="green25k"
+                >{{ green }} ($25k)</el-checkbox
+              >
             </el-space>
           </el-checkbox-group>
         </el-form-item>
@@ -114,13 +155,11 @@
             @update:model-value="emit('update:tournamentPreset', $event)"
             style="width: 240px"
           >
-            <el-option label="无预设" value="none" />
-            <el-option label="Day 1 Early" value="day1_early" />
-            <el-option label="Day 1 First Color Up" value="day1_first_color_up" />
-            <el-option label="Day 1 Second Color Up" value="day1_second_color_up" />
-            <el-option label="Day 2 First Color Up" value="day2_first_color_up" />
-            <el-option label="Day 2 Second Color Up" value="day2_second_color_up" />
-            <el-option label="Final Table" value="final_table" />
+            <el-option
+              v-for="item in getTournamentPresetOptions()"
+              :label="item.label"
+              :value="item.value"
+            ></el-option>
           </el-select>
         </el-form-item>
 
@@ -131,15 +170,33 @@
           >
             <el-space size="large">
               <!-- 按面额从小到大排列 -->
-              <el-checkbox label="black100">{{ black }}（100）</el-checkbox>
-              <el-checkbox label="purple500">{{ purple }}（500）</el-checkbox>
-              <el-checkbox label="yellow1k">{{ gold }}（1k）</el-checkbox>
-              <el-checkbox label="red5k">{{ red }}（5k）</el-checkbox>
-              <el-checkbox label="green25k">{{ green }}（25k）</el-checkbox>
-              <el-checkbox label="blue100k">{{ blue }}（100k）</el-checkbox>
-              <el-checkbox label="pink500k">{{ pink }}（500k）</el-checkbox>
-              <el-checkbox label="orange1m">{{ orange }}（1M）</el-checkbox>
-              <el-checkbox label="grey5m">{{ grey }}（5M）</el-checkbox>
+              <el-checkbox v-if="isTournamentPresetColorEnabled('black100')" label="black100"
+                >{{ black }}（100）</el-checkbox
+              >
+              <el-checkbox v-if="isTournamentPresetColorEnabled('purple500')" label="purple500"
+                >{{ purple }}（500）</el-checkbox
+              >
+              <el-checkbox v-if="isTournamentPresetColorEnabled('yellow1k')" label="yellow1k"
+                >{{ gold }}（1k）</el-checkbox
+              >
+              <el-checkbox v-if="isTournamentPresetColorEnabled('red5k')" label="red5k"
+                >{{ red }}（5k）</el-checkbox
+              >
+              <el-checkbox v-if="isTournamentPresetColorEnabled('green25k')" label="green25k"
+                >{{ green }}（25k）</el-checkbox
+              >
+              <el-checkbox v-if="isTournamentPresetColorEnabled('blue100k')" label="blue100k"
+                >{{ blue }}（100k）</el-checkbox
+              >
+              <el-checkbox v-if="isTournamentPresetColorEnabled('pink500k')" label="pink500k"
+                >{{ pink }}（500k）</el-checkbox
+              >
+              <el-checkbox v-if="isTournamentPresetColorEnabled('orange1m')" label="orange1m"
+                >{{ orange }}（1M）</el-checkbox
+              >
+              <el-checkbox v-if="isTournamentPresetColorEnabled('grey5m')" label="grey5m"
+                >{{ grey }}（5M）</el-checkbox
+              >
             </el-space>
           </el-checkbox-group>
         </el-form-item>

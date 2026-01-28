@@ -144,12 +144,15 @@ export function useTrainingAnalysis(options: { userId: Ref<string>; range: Ref<T
     }
   })
   const daily = computed(() => {
-    const map = new Map<string, number>()
+    const map = new Map<string, { correct: number; wrong: number }>()
 
     sessions.value.forEach((s) => {
       const ts = s.startAt
-      const count = s.totalCount ?? 0
       if (!ts) return
+
+      const total = s.totalCount ?? 0
+      const wrong = s.wrongCount ?? 0
+      const correct = total - wrong
 
       const d = new Date(ts)
       const key = `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(
@@ -157,14 +160,21 @@ export function useTrainingAnalysis(options: { userId: Ref<string>; range: Ref<T
         '0'
       )}`
 
-      map.set(key, (map.get(key) ?? 0) + count)
+      const prev = map.get(key) ?? { correct: 0, wrong: 0 }
+
+      map.set(key, {
+        correct: prev.correct + correct,
+        wrong: prev.wrong + wrong,
+      })
     })
 
-    return Array.from(map.entries()).map(([date, count]) => ({
+    return Array.from(map.entries()).map(([date, v]) => ({
       date,
-      count,
+      correct: v.correct,
+      wrong: v.wrong,
     }))
   })
+
   const accuracyTrend = computed(() => {
     const map = new Map<string, { total: number; correct: number }>()
 

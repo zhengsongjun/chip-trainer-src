@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { computed } from 'vue'
+  import { Document, CircleCheck, Timer } from '@element-plus/icons-vue'
 
   interface Summary {
     totalQuestions: number
@@ -28,24 +29,36 @@
 <template>
   <div class="stat-cards">
     <div class="ui-panel stat-card">
-      <div class="stat-title">练习题数</div>
+      <div class="stat-header">
+        <el-icon class="stat-icon"><Document /></el-icon>
+        <span class="stat-title">练习题数</span>
+      </div>
       <div class="stat-value stat-neutral">
         {{ props.summary?.totalQuestions ?? 0 }}
       </div>
     </div>
 
     <div class="ui-panel stat-card">
-      <div class="stat-title">总正确率</div>
+      <div class="stat-header">
+        <el-icon class="stat-icon success"><CircleCheck /></el-icon>
+        <span class="stat-title">总正确率</span>
+      </div>
       <div class="stat-value stat-success">{{ accuracyPercent }}%</div>
     </div>
 
     <div class="ui-panel stat-card">
-      <div class="stat-title">平均答题时间</div>
+      <div class="stat-header">
+        <el-icon class="stat-icon time"><Timer /></el-icon>
+        <span class="stat-title">平均答题时间</span>
+      </div>
       <div class="stat-value stat-time">{{ avgTimeSec }} s</div>
     </div>
 
     <div class="ui-panel stat-card">
-      <div class="stat-title">中位答题时间</div>
+      <div class="stat-header">
+        <el-icon class="stat-icon time"><Timer /></el-icon>
+        <span class="stat-title">中位答题时间</span>
+      </div>
       <div class="stat-value stat-time">{{ medianTimeSec }} s</div>
     </div>
   </div>
@@ -60,20 +73,47 @@
   }
 
   .stat-card {
+    padding: 16px 18px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: space-between;
+  }
+
+  /* 标题行 */
+  .stat-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
 
   .stat-title {
-    font-size: var(--font-size-sm);
+    font-size: 13px;
     color: var(--color-text-secondary);
+    line-height: 1;
   }
 
+  /* icon：弱存在感 */
+  .stat-icon {
+    font-size: 14px;
+    color: var(--color-text-placeholder);
+  }
+
+  .stat-icon.success {
+    color: var(--stat-success);
+    opacity: 0.8;
+  }
+
+  .stat-icon.time {
+    color: var(--stat-time);
+    opacity: 0.8;
+  }
+
+  /* 数值 */
   .stat-value {
-    margin-top: var(--space-2);
-    font-size: 26px;
+    margin-top: 12px;
+    font-size: 28px;
     font-weight: 600;
+    line-height: 1.2;
   }
 
   .stat-neutral {
