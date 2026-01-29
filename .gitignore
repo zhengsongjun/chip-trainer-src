@@ -32,3 +32,8 @@ coverage
 
 # Vitest
 __screenshots__/
+
+# Firebase
+.firebase/
+*.cache
+*.cache

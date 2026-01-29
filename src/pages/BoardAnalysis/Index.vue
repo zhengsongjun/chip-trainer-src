@@ -207,6 +207,11 @@
     )
   })
 
+  /** ✅ TextureAnalysis 是否启用（仅 Hold'em、Omaha、Big O） */
+  const isTextureAnalysisEnabled = computed(() => {
+    return gameMode.value === 'holdem' || gameMode.value === 'omaha' || gameMode.value === 'bigo'
+  })
+
   /** ✅ 多选：你选择的所有 High 玩家 */
   const selectedHighSeats = computed<number[]>(() => {
     return Object.entries(handStatuses.value)
@@ -1250,7 +1255,11 @@
         }"
       >
         <div class="board-overlay">
-          <TextureAnalysisPanel :board-cards="boardCards" anchor-selector=".board-overlay" />
+          <TextureAnalysisPanel
+            :board-cards="boardCards"
+            anchor-selector=".board-overlay"
+            :enabled="isTextureAnalysisEnabled"
+          />
           <!-- 公共牌 (仅在非 7 Card Stud、Razz 和 Badugi 模式下显示) -->
           <div
             v-if="gameMode !== '7stud' && gameMode !== 'razz' && gameMode !== 'badugi'"
