@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { reactive, ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+  import { reactive, ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
   import {
     analyzeBoardTexture,
     validateStraightMissingInput,
@@ -30,7 +30,10 @@
   const props = defineProps<{
     boardCards: string[]
     anchorSelector?: string
+    enabled?: boolean
   }>()
+
+  const isEnabled = computed(() => props.enabled ?? true)
 
   /* ===============================
    State（⚠️ 不自动验证）
@@ -126,6 +129,16 @@
   })
 
   /* ===============================
+   监听 enabled 状态变化，禁用时重置
+  =============================== */
+
+  watch(isEnabled, (newEnabled) => {
+    if (!newEnabled) {
+      resetAll()
+    }
+  })
+
+  /* ===============================
    验证（唯一入口）
   =============================== */
 
@@ -201,7 +214,7 @@
 </script>
 
 <template>
-  <div class="texture-panel chip-stage" :class="{ collapsed: isCollapsed }" ref="panelRef">
+  <div class="texture-panel chip-stage" :class="{ collapsed: isCollapsed, disabled: !isEnabled }" ref="panelRef">
     <!-- Header -->
     <header class="panel-header" @mousedown="onDragStart">
       <span class="panel-title">{{ textureAnalysis }}</span>
@@ -214,8 +227,14 @@
 
     <!-- Body -->
     <div v-show="!isCollapsed" class="panel-body">
+      <!-- 禁用提示 -->
+      <div v-if="!isEnabled" class="disabled-hint">
+        Texture analysis is only available for Hold'em, Omaha, and Big O
+      </div>
+
       <!-- 基础判断 -->
       <div
+        v-else
         class="row"
         v-for="item in [
           { key: 'pair', label: pair, model: 'hasPair', result: 'pairResult' },
@@ -249,7 +268,7 @@
       </div>
 
       <!-- 同花顺 -->
-      <div v-if="state.hasFlush && state.hasStraight" class="row">
+      <div v-if="isEnabled && state.hasFlush && state.hasStraight" class="row">
         <span class="row-label">{{ straightFlushPotential }}</span>
 
         <el-radio-group v-model="state.hasStraightFlush" class="row-radio">
@@ -276,7 +295,7 @@
       </div>
 
       <!-- 顺子缺张 -->
-      <div v-if="state.hasStraight" class="row vertical">
+      <div v-if="isEnabled && state.hasStraight" class="row vertical">
         <el-input
           v-model="state.straightMissingInput"
           type="textarea"
@@ -293,7 +312,7 @@
 
       <!-- 同花顺缺张 -->
       <div
-        v-if="state.hasFlush && state.hasStraight && state.hasStraightFlush"
+        v-if="isEnabled && state.hasFlush && state.hasStraight && state.hasStraightFlush"
         class="row vertical"
       >
         <el-input
@@ -313,10 +332,10 @@
 
     <!-- Footer -->
     <footer v-show="!isCollapsed" class="panel-footer">
-      <el-button size="small" type="primary" @click="validateAll">
+      <el-button size="small" type="primary" @click="validateAll" :disabled="!isEnabled">
         {{ verify }}
       </el-button>
-      <el-button size="small" @click="resetAll">
+      <el-button size="small" @click="resetAll" :disabled="!isEnabled">
         {{ reset }}
       </el-button>
     </footer>
@@ -372,6 +391,27 @@
   /* 收起态 */
   .texture-panel.collapsed .panel-header {
     padding: 8px 12px;
+  }
+
+  /* ================= Disabled 状态 ================= */
+
+  .texture-panel.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  .texture-panel.disabled .panel-header {
+    cursor: not-allowed;
+  }
+
+  .disabled-hint {
+    padding: 12px;
+    background: #f5f5f5;
+    border-radius: 6px;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    text-align: center;
+    line-height: 1.5;
   }
 
   /* ================= Body ================= */
