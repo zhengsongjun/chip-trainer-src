@@ -22,7 +22,7 @@
   const questionStartAt = ref(Date.now())
   const showFireworks = ref(false)
   const playerCount = ref<number>(2)
-  const gameMode = ref<'holdem' | 'omaha' | 'bigo' | '7stud' | 'razz' | 'badugi'>('omaha')
+  const gameMode = ref<'holdem' | 'omaha' | 'bigo' | '7stud' | 'razz' | 'badugi' | 'lowball-a5' | 'lowball-27' | 'ari' | 'archie' | 'badacey' | 'badeucey'>('omaha')
 
   const boardCards = ref<string[]>([])
   const playerHands = ref<Record<number, string[]>>({})
@@ -95,7 +95,7 @@
 
   function pickRandomSeats(count: number): number[] {
     // 7 Card Stud 和 Razz 模式下，只使用 1, 3, 4, 5, 6, 8 号座位（排除 2 和 7）
-    // Badugi 模式使用所有8个座位
+    // Badugi、Lowball A-5、Lowball 2-7、Ari、Archie、Badacey 和 Badeucey 模式使用所有8个座位
     const allSeats =
       gameMode.value === '7stud' || gameMode.value === 'razz'
         ? [1, 3, 4, 5, 6, 8]
@@ -171,8 +171,8 @@
     seat: 0,
   })
 
-  // 游戏类型：High 或 High Low 或 A-5 Low 或 2-7 Low 或 Badugi
-  const gameType = ref<'high' | 'high-low' | 'a5-low' | '2-7-low' | 'badugi'>('high')
+  // 游戏类型：High 或 High Low 或 A-5 Low 或 2-7 Low 或 Badugi 或 Lowball A-5 或 Lowball 2-7 或 Ari 或 Archie 或 Badacey 或 Badeucey
+  const gameType = ref<'high' | 'high-low' | 'a5-low' | '2-7-low' | 'badugi' | 'lowball-a5-type' | 'lowball-27-type' | 'ari-type' | 'archie-type' | 'badacey-type' | 'badeucey-type'>('high')
 
   /* =============================== 结果弹窗 =============================== */
 
@@ -210,6 +210,20 @@
   /** ✅ TextureAnalysis 是否启用（仅 Hold'em、Omaha、Big O） */
   const isTextureAnalysisEnabled = computed(() => {
     return gameMode.value === 'holdem' || gameMode.value === 'omaha' || gameMode.value === 'bigo'
+  })
+
+  /** ✅ Chip 显示文本 */
+  const highChipLabel = computed(() => {
+    if (gameMode.value === 'badacey') {
+      return 'BADUGI'
+    } else if (gameMode.value === 'badeucey') {
+      return 'BADEUGI 2-7'
+    }
+    return 'HIGH'
+  })
+
+  const lowChipLabel = computed(() => {
+    return 'LOW'
   })
 
   /** ✅ 多选：你选择的所有 High 玩家 */
@@ -292,6 +306,60 @@
 
       for (const seat of activeSeats.value) {
         hands[seat] = deck.splice(0, 4)
+        statuses[seat] = 'none'
+      }
+      playerStudCards.value = {}
+    } else if (gameMode.value === 'lowball-a5') {
+      // Lowball A-5: 不需要公共牌，每人5张牌
+      boardCards.value = []
+
+      for (const seat of activeSeats.value) {
+        hands[seat] = deck.splice(0, 5)
+        statuses[seat] = 'none'
+      }
+      playerStudCards.value = {}
+    } else if (gameMode.value === 'lowball-27') {
+      // Lowball 2-7: 不需要公共牌，每人5张牌
+      boardCards.value = []
+
+      for (const seat of activeSeats.value) {
+        hands[seat] = deck.splice(0, 5)
+        statuses[seat] = 'none'
+      }
+      playerStudCards.value = {}
+    } else if (gameMode.value === 'ari') {
+      // Ari: 1张公共牌，每人5张牌
+      boardCards.value = deck.splice(0, 1)
+
+      for (const seat of activeSeats.value) {
+        hands[seat] = deck.splice(0, 5)
+        statuses[seat] = 'none'
+      }
+      playerStudCards.value = {}
+    } else if (gameMode.value === 'archie') {
+      // Archie: 没有公共牌，每人5张牌
+      boardCards.value = []
+
+      for (const seat of activeSeats.value) {
+        hands[seat] = deck.splice(0, 5)
+        statuses[seat] = 'none'
+      }
+      playerStudCards.value = {}
+    } else if (gameMode.value === 'badacey') {
+      // Badacey A-5: 没有公共牌，每人5张牌
+      boardCards.value = []
+
+      for (const seat of activeSeats.value) {
+        hands[seat] = deck.splice(0, 5)
+        statuses[seat] = 'none'
+      }
+      playerStudCards.value = {}
+    } else if (gameMode.value === 'badeucey') {
+      // Badeucey 2-7: 没有公共牌，每人5张牌
+      boardCards.value = []
+
+      for (const seat of activeSeats.value) {
+        hands[seat] = deck.splice(0, 5)
         statuses[seat] = 'none'
       }
       playerStudCards.value = {}
@@ -680,6 +748,196 @@
   }
 
   /**
+   * Lowball A-5：计算牌力评分（越小越好）
+   * 规则：A算1点，同花和顺子不影响牌力，但对子、两对、三条、葫芦、四条让牌力变差
+   * 比较方式：从高到低比较每张牌
+   */
+  function getLowballA5Score(cards: string[]): { score: number; highCards: number[] } {
+    const rankValues: Record<string, number> = {
+      A: 1,
+      '2': 2,
+      '3': 3,
+      '4': 4,
+      '5': 5,
+      '6': 6,
+      '7': 7,
+      '8': 8,
+      '9': 9,
+      T: 10,
+      J: 11,
+      Q: 12,
+      K: 13,
+    }
+
+    const ranks = cards.map((c) => c[0])
+    const values = ranks.map((r) => rankValues[r])
+
+    // 统计每个点数的数量
+    const rankCounts = new Map<number, number>()
+    for (const v of values) {
+      rankCounts.set(v, (rankCounts.get(v) || 0) + 1)
+    }
+
+    // 判断牌型
+    const counts = Array.from(rankCounts.values()).sort((a, b) => b - a)
+    let handType = 0 // 0=高牌, 1=一对, 2=两对, 3=三条, 4=葫芦, 5=四条
+
+    if (counts[0] === 4)
+      handType = 5 // 四条
+    else if (counts[0] === 3 && counts[1] === 2)
+      handType = 4 // 葫芦
+    else if (counts[0] === 3)
+      handType = 3 // 三条
+    else if (counts[0] === 2 && counts[1] === 2)
+      handType = 2 // 两对
+    else if (counts[0] === 2) handType = 1 // 一对
+
+    // 获取高牌（从大到小排序）
+    const highCards = values.sort((a, b) => b - a)
+
+    // 牌型权重 * 1000000，然后加上高牌比较
+    return { score: handType * 1000000, highCards }
+  }
+
+  /**
+   * 获取 Lowball A-5 模式下的最佳 Low 牌（直接使用5张手牌）
+   */
+  function getLowballA5Hand(cards: string[]): { cards: string[]; score: number; highCards: number[] } {
+    const solverCards = cards.map(toSolverCard)
+    const scoreResult = getLowballA5Score(solverCards)
+    return { cards: solverCards, ...scoreResult }
+  }
+
+  /**
+   * 获取 Lowball 2-7 模式下的最佳 Low 牌（直接使用5张手牌）
+   */
+  function getLowball27Hand(cards: string[]): { cards: string[]; score: number; highCards: number[] } {
+    const solverCards = cards.map(toSolverCard)
+    const scoreResult = get27LowScore(solverCards)
+    return { cards: solverCards, ...scoreResult }
+  }
+
+  /**
+   * Ari High：检查牌型是否 qualify（至少一对 9 或以上）
+   * Archie High：检查牌型是否 qualify（至少一对 9 或以上）
+   */
+  function checkAriHighQualifier(hand: any): boolean {
+    const handName = hand.name.toLowerCase()
+
+    // 高牌不 qualify
+    if (handName === 'high card') {
+      return false
+    }
+
+    // 一对：需要检查对子的点数
+    if (handName === 'pair') {
+      // 字符串到数字的映射
+      const rankValueString: Record<string, number> = {
+        '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
+        'T': 10, 't': 10, '10': 10,
+        'J': 11, 'j': 11,
+        'Q': 12, 'q': 12,
+        'K': 13, 'k': 13,
+        'A': 14, 'a': 14
+      }
+
+      // pokersolver 数字映射（从 1 开始）
+      // 2=1, 3=2, 4=3, 5=4, 6=5, 7=6, 8=7, 9=8, T=9, J=10, Q=11, K=12, A=13
+      const rankValueNumber: Record<number, number> = {
+        1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 7: 8, 8: 9, 9: 10, 10: 11, 11: 12, 12: 13, 13: 14
+      }
+
+      // 找到对子的点数：统计每个点数出现的次数
+      const rankCounts = new Map<any, number>()
+      for (const card of hand.cards) {
+        const rank = card.rank || card.value
+        rankCounts.set(rank, (rankCounts.get(rank) || 0) + 1)
+      }
+
+      // 找出出现2次的点数（对子）
+      for (const [rank, count] of rankCounts.entries()) {
+        if (count === 2) {
+          let pairValue = 0
+
+          if (typeof rank === 'string') {
+            // 字符串类型：使用映射表
+            pairValue = rankValueString[rank] || 0
+          } else if (typeof rank === 'number') {
+            // 数字类型：使用 pokersolver 映射表
+            pairValue = rankValueNumber[rank] || 0
+          }
+
+          console.log(`Pair rank: ${rank} (type: ${typeof rank}), value: ${pairValue}, qualify: ${pairValue >= 9}`)
+          return pairValue >= 9 // 至少一对 9（对应 pairValue >= 9）
+        }
+      }
+
+      console.log('No pair found in cards:', hand.cards.map((c: any) => ({rank: c.rank, value: c.value})))
+      return false
+    }
+
+    // 其他所有牌型都 qualify（两对、三条、顺子、同花、葫芦、四条、同花顺等）
+    return true
+  }
+
+  /**
+   * Ari Low：检查是否 qualify 并计算牌力（只用手牌5张，A-5规则）
+   * Qualifier: 5张牌点数各不相同，所有牌都≤8
+   */
+  function getAriLowHand(holeCards: string[]): { cards: string[]; valid: boolean; highCards: number[] } {
+    const rankValues: Record<string, number> = {
+      A: 1,
+      '2': 2,
+      '3': 3,
+      '4': 4,
+      '5': 5,
+      '6': 6,
+      '7': 7,
+      '8': 8,
+      '9': 9,
+      T: 10,
+      J: 11,
+      Q: 12,
+      K: 13,
+    }
+
+    const solverCards = holeCards.map(toSolverCard)
+    const ranks = solverCards.map((c) => c[0])
+    const values = ranks.map((r) => rankValues[r])
+
+    // 检查是否所有牌都 ≤8
+    const allUnder8 = values.every((v) => v <= 8)
+    if (!allUnder8) {
+      return { cards: [], valid: false, highCards: [] }
+    }
+
+    // 检查是否有重复点数
+    const rankCounts = new Map<number, number>()
+    for (const v of values) {
+      rankCounts.set(v, (rankCounts.get(v) || 0) + 1)
+    }
+    const hasPair = Array.from(rankCounts.values()).some((count) => count > 1)
+    if (hasPair) {
+      return { cards: [], valid: false, highCards: [] }
+    }
+
+    // Qualify 成功，从大到小排序用于比较
+    const highCards = values.sort((a, b) => b - a)
+
+    return { cards: solverCards, valid: true, highCards }
+  }
+
+  /**
+   * Badacey A-5 Low：不需要 qualifier，直接计算 A-5 Low 牌力
+   * 规则：A=1，同花和顺子不影响牌力，对子/两对/三条等让牌力变差
+   */
+  function getBadaceyA5LowHand(holeCards: string[]): { cards: string[]; score: number; highCards: number[] } {
+    const solverCards = holeCards.map(toSolverCard)
+    const scoreResult = getLowballA5Score(solverCards)
+    return { cards: solverCards, ...scoreResult }
+  }
+
+  /**
    * 获取 Razz 模式下的最佳 Low 牌
    */
   function getRazzLowHand(
@@ -785,6 +1043,71 @@
   }
 
   /**
+   * 计算 Badeucey 2-7 Badugi 牌的最佳组合（A=14，是很差的牌）
+   * 规则：
+   * 1. 尽可能多的不同花色、不同点数的牌（4张最好）
+   * 2. 如果有相同点数，只能用一张
+   * 3. 如果有相同花色，只能用一张（选点数最低的）
+   * 4. 点数越低越好（A=14，是最差的牌）
+   */
+  function getBadeuceyBadugiHand(cards: string[]): {
+    validCards: string[]
+    count: number
+    ranks: number[]
+  } {
+    const rankValues: Record<string, number> = {
+      A: 14, // Badeucey 中 A=14，是很差的牌
+      '2': 2,
+      '3': 3,
+      '4': 4,
+      '5': 5,
+      '6': 6,
+      '7': 7,
+      '8': 8,
+      '9': 9,
+      T: 10,
+      J: 11,
+      Q: 12,
+      K: 13,
+    }
+
+    // 转换为solver格式
+    const solverCards = cards.map(toSolverCard)
+
+    // 按点数从小到大排序
+    const sortedCards = solverCards
+      .map((c) => ({
+        card: c,
+        rank: c[0],
+        suit: c[1],
+        value: rankValues[c[0]],
+      }))
+      .sort((a, b) => a.value - b.value)
+
+    // 贪心算法：按点数从小到大，选择不同花色、不同点数的牌
+    const validCards: string[] = []
+    const usedRanks = new Set<string>()
+    const usedSuits = new Set<string>()
+
+    for (const cardInfo of sortedCards) {
+      if (!usedRanks.has(cardInfo.rank) && !usedSuits.has(cardInfo.suit)) {
+        validCards.push(cardInfo.card)
+        usedRanks.add(cardInfo.rank)
+        usedSuits.add(cardInfo.suit)
+      }
+    }
+
+    // 获取有效牌的点数（从大到小排序用于比较）
+    const ranks = validCards.map((c) => rankValues[c[0]]).sort((a, b) => b - a)
+
+    return {
+      validCards,
+      count: validCards.length,
+      ranks,
+    }
+  }
+
+  /**
    * 比较两手Badugi牌
    * 返回负数表示hand1更好（更低）
    */
@@ -806,6 +1129,559 @@
   }
 
   function checkAnswer() {
+    // Badeucey 2-7 模式需要同时判断 Badugi 2-7 和 2-7 Low
+    if (gameMode.value === 'badeucey') {
+      if (selectedHighSeats.value.length === 0 && selectedLowSeats.value.length === 0) {
+        ElMessage.warning('Please select the winning player(s) first')
+        return
+      }
+
+      // 计算 Badugi 2-7 赢家（从5张牌选最好的4张，A=14）
+      const solvedBadugi = Object.entries(playerHands.value).map(([seat, cards]) => {
+        const badugiHand = getBadeuceyBadugiHand(cards)
+        return {
+          seat: Number(seat),
+          badugiHand,
+        }
+      })
+
+      // 找出最好的 Badugi 2-7 牌
+      let bestBadugi = solvedBadugi[0]
+      for (const player of solvedBadugi) {
+        if (compareBadugiHands(player.badugiHand, bestBadugi.badugiHand) < 0) {
+          bestBadugi = player
+        }
+      }
+
+      // 找出所有平局的玩家（Badugi 2-7）
+      const badugiWinnerSeats = solvedBadugi
+        .filter((p) => compareBadugiHands(p.badugiHand, bestBadugi.badugiHand) === 0)
+        .map((p) => p.seat)
+        .sort((a, b) => a - b)
+
+      const badugiWinnerDetails = badugiWinnerSeats
+        .map((seat) => {
+          const player = solvedBadugi.find((s) => s.seat === seat)
+          const cardCount = player?.badugiHand.count
+          const cardType = cardCount === 4 ? 'Badugi' : `${cardCount}-card`
+          return `Player ${seat}: ${player?.badugiHand.validCards.join(' ')} (${cardType})`
+        })
+        .join('\n')
+
+      // 计算 2-7 Low 赢家（5张牌，无 qualifier）
+      const solvedLow = Object.entries(playerHands.value).map(([seat, cards]) => {
+        const lowHand = getLowball27Hand(cards)
+        return {
+          seat: Number(seat),
+          lowHand,
+        }
+      })
+
+      // 找出最好的 2-7 Low 牌
+      let bestLow = solvedLow[0]
+      for (const player of solvedLow) {
+        if (
+          player.lowHand.score < bestLow.lowHand.score ||
+          (player.lowHand.score === bestLow.lowHand.score &&
+            compareHighCards(player.lowHand.highCards, bestLow.lowHand.highCards) < 0)
+        ) {
+          bestLow = player
+        }
+      }
+
+      // 找出所有平局的玩家（2-7 Low）
+      const lowWinnerSeats = solvedLow
+        .filter(
+          (p) =>
+            p.lowHand.score === bestLow.lowHand.score &&
+            compareHighCards(p.lowHand.highCards, bestLow.lowHand.highCards) === 0
+        )
+        .map((p) => p.seat)
+        .sort((a, b) => a - b)
+
+      const lowWinnerDetails = lowWinnerSeats
+        .map((seat) => {
+          const player = solvedLow.find((s) => s.seat === seat)
+          return `Player ${seat}: ${player?.lowHand.cards.join(' ')}`
+        })
+        .join('\n')
+
+      // 检查 Badugi 2-7 答案（使用 High 位置）
+      const badugiCorrect =
+        badugiWinnerSeats.length === selectedHighSeats.value.length &&
+        badugiWinnerSeats.every((seat, i) => seat === selectedHighSeats.value[i])
+
+      // 检查 2-7 Low 答案
+      const lowCorrect =
+        lowWinnerSeats.length === selectedLowSeats.value.length &&
+        lowWinnerSeats.every((seat, i) => seat === selectedLowSeats.value[i])
+
+      if (!badugiCorrect || !lowCorrect) {
+        resultMessage.value =
+          `Wrong ❌\n\n` +
+          `Badugi 2-7 winner(s): ${badugiWinnerSeats.join(', ')}\n` +
+          `${badugiWinnerDetails}\n\n` +
+          `2-7 Low winner(s): ${lowWinnerSeats.join(', ')}\n` +
+          `${lowWinnerDetails}\n\n` +
+          `Your Badugi 2-7 answer: ${selectedHighSeats.value.join(', ') || 'None'}\n` +
+          `Your 2-7 Low answer: ${selectedLowSeats.value.join(', ') || 'None'}`
+        showResult.value = true
+        return
+      }
+
+      ElMessage.success('Correct! 🎉')
+      showFireworks.value = true
+      setTimeout(dealNewHand, 1200)
+      return
+    }
+
+    // Badacey A-5 模式需要同时判断 Badugi 和 A-5 Low
+    if (gameMode.value === 'badacey') {
+      if (selectedHighSeats.value.length === 0 && selectedLowSeats.value.length === 0) {
+        ElMessage.warning('Please select the winning player(s) first')
+        return
+      }
+
+      // 计算 Badugi 赢家（从5张牌选最好的4张）
+      const solvedBadugi = Object.entries(playerHands.value).map(([seat, cards]) => {
+        const badugiHand = getBadugiHand(cards)
+        return {
+          seat: Number(seat),
+          badugiHand,
+        }
+      })
+
+      // 找出最好的 Badugi 牌
+      let bestBadugi = solvedBadugi[0]
+      for (const player of solvedBadugi) {
+        if (compareBadugiHands(player.badugiHand, bestBadugi.badugiHand) < 0) {
+          bestBadugi = player
+        }
+      }
+
+      // 找出所有平局的玩家（Badugi）
+      const badugiWinnerSeats = solvedBadugi
+        .filter((p) => compareBadugiHands(p.badugiHand, bestBadugi.badugiHand) === 0)
+        .map((p) => p.seat)
+        .sort((a, b) => a - b)
+
+      const badugiWinnerDetails = badugiWinnerSeats
+        .map((seat) => {
+          const player = solvedBadugi.find((s) => s.seat === seat)
+          const cardCount = player?.badugiHand.count
+          const cardType = cardCount === 4 ? 'Badugi' : `${cardCount}-card`
+          return `Player ${seat}: ${player?.badugiHand.validCards.join(' ')} (${cardType})`
+        })
+        .join('\n')
+
+      // 计算 A-5 Low 赢家（5张牌，无 qualifier）
+      const solvedLow = Object.entries(playerHands.value).map(([seat, cards]) => {
+        const lowHand = getBadaceyA5LowHand(cards)
+        return {
+          seat: Number(seat),
+          lowHand,
+        }
+      })
+
+      // 找出最好的 A-5 Low 牌
+      let bestLow = solvedLow[0]
+      for (const player of solvedLow) {
+        if (
+          player.lowHand.score < bestLow.lowHand.score ||
+          (player.lowHand.score === bestLow.lowHand.score &&
+            compareHighCards(player.lowHand.highCards, bestLow.lowHand.highCards) < 0)
+        ) {
+          bestLow = player
+        }
+      }
+
+      // 找出所有平局的玩家（A-5 Low）
+      const lowWinnerSeats = solvedLow
+        .filter(
+          (p) =>
+            p.lowHand.score === bestLow.lowHand.score &&
+            compareHighCards(p.lowHand.highCards, bestLow.lowHand.highCards) === 0
+        )
+        .map((p) => p.seat)
+        .sort((a, b) => a - b)
+
+      const lowWinnerDetails = lowWinnerSeats
+        .map((seat) => {
+          const player = solvedLow.find((s) => s.seat === seat)
+          return `Player ${seat}: ${player?.lowHand.cards.join(' ')}`
+        })
+        .join('\n')
+
+      // 检查 Badugi 答案（使用 High 位置）
+      const badugiCorrect =
+        badugiWinnerSeats.length === selectedHighSeats.value.length &&
+        badugiWinnerSeats.every((seat, i) => seat === selectedHighSeats.value[i])
+
+      // 检查 A-5 Low 答案
+      const lowCorrect =
+        lowWinnerSeats.length === selectedLowSeats.value.length &&
+        lowWinnerSeats.every((seat, i) => seat === selectedLowSeats.value[i])
+
+      if (!badugiCorrect || !lowCorrect) {
+        resultMessage.value =
+          `Wrong ❌\n\n` +
+          `Badugi winner(s): ${badugiWinnerSeats.join(', ')}\n` +
+          `${badugiWinnerDetails}\n\n` +
+          `A-5 Low winner(s): ${lowWinnerSeats.join(', ')}\n` +
+          `${lowWinnerDetails}\n\n` +
+          `Your Badugi answer: ${selectedHighSeats.value.join(', ') || 'None'}\n` +
+          `Your A-5 Low answer: ${selectedLowSeats.value.join(', ') || 'None'}`
+        showResult.value = true
+        return
+      }
+
+      ElMessage.success('Correct! 🎉')
+      showFireworks.value = true
+      setTimeout(dealNewHand, 1200)
+      return
+    }
+
+    // Archie 模式需要同时判断 High 和 Low
+    if (gameMode.value === 'archie') {
+      if (selectedHighSeats.value.length === 0 && selectedLowSeats.value.length === 0) {
+        ElMessage.warning('Please select the winning player(s) first')
+        return
+      }
+
+      // 计算 High 赢家（只用5张手牌）
+      // Qualifier: 至少一对 9 或以上
+      const solvedHigh = Object.entries(playerHands.value).map(([seat, cards]) => {
+        const hand = Hand.solve(cards.map(toSolverCard))
+        const qualified = checkAriHighQualifier(hand)
+        return {
+          seat: Number(seat),
+          hand,
+          qualified,
+        }
+      })
+
+      // 只考虑 qualify 的玩家
+      const qualifiedHighPlayers = solvedHigh.filter((s) => s.qualified)
+
+      let highWinnerSeats: number[] = []
+      let highWinnerDetails = ''
+
+      if (qualifiedHighPlayers.length > 0) {
+        const highWinners = Hand.winners(qualifiedHighPlayers.map((s) => s.hand))
+        highWinnerSeats = qualifiedHighPlayers
+          .filter((s) => highWinners.includes(s.hand))
+          .map((s) => s.seat)
+          .sort((a, b) => a - b)
+
+        highWinnerDetails = qualifiedHighPlayers
+          .filter((s) => highWinnerSeats.includes(s.seat))
+          .map((s) => `Player ${s.seat}: ${s.hand.descr}`)
+          .join('\n')
+      }
+
+      // 计算 Low 赢家（只用5张手牌，A-5规则）
+      const solvedLow = Object.entries(playerHands.value).map(([seat, cards]) => {
+        const lowHand = getAriLowHand(cards)
+        return {
+          seat: Number(seat),
+          lowHand,
+        }
+      })
+
+      // 找出有效的 Low 牌
+      const validLowPlayers = solvedLow.filter((s) => s.lowHand.valid)
+
+      let lowWinnerSeats: number[] = []
+      let lowWinnerDetails = ''
+
+      if (validLowPlayers.length > 0) {
+        // 找出最好的 Low 牌（高牌最低的）
+        let bestLow = validLowPlayers[0]
+        for (const player of validLowPlayers) {
+          if (compareHighCards(player.lowHand.highCards, bestLow.lowHand.highCards) < 0) {
+            bestLow = player
+          }
+        }
+
+        // 找出所有平局的玩家
+        lowWinnerSeats = validLowPlayers
+          .filter((p) => compareHighCards(p.lowHand.highCards, bestLow.lowHand.highCards) === 0)
+          .map((p) => p.seat)
+          .sort((a, b) => a - b)
+
+        lowWinnerDetails = lowWinnerSeats
+          .map((seat) => {
+            const player = solvedLow.find((s) => s.seat === seat)
+            return `Player ${seat}: ${player?.lowHand.cards.join(' ')}`
+          })
+          .join('\n')
+      }
+
+      // 检查 High 答案
+      const highCorrect =
+        highWinnerSeats.length === selectedHighSeats.value.length &&
+        highWinnerSeats.every((seat, i) => seat === selectedHighSeats.value[i])
+
+      // 检查 Low 答案
+      const lowCorrect =
+        lowWinnerSeats.length === selectedLowSeats.value.length &&
+        lowWinnerSeats.every((seat, i) => seat === selectedLowSeats.value[i])
+
+      if (!highCorrect || !lowCorrect) {
+        resultMessage.value =
+          `Wrong ❌\n\n` +
+          `High winner(s): ${highWinnerSeats.length > 0 ? highWinnerSeats.join(', ') : 'No qualifying high'}\n` +
+          `${highWinnerDetails}\n\n` +
+          `Low winner(s): ${lowWinnerSeats.length > 0 ? lowWinnerSeats.join(', ') : 'No qualifying low'}\n` +
+          `${lowWinnerDetails}\n\n` +
+          `Your High answer: ${selectedHighSeats.value.join(', ') || 'None'}\n` +
+          `Your Low answer: ${selectedLowSeats.value.join(', ') || 'None'}`
+        showResult.value = true
+        return
+      }
+
+      ElMessage.success('Correct! 🎉')
+      showFireworks.value = true
+      setTimeout(dealNewHand, 1200)
+      return
+    }
+
+    // Ari 模式需要同时判断 High 和 Low
+    if (gameMode.value === 'ari') {
+      if (selectedHighSeats.value.length === 0 && selectedLowSeats.value.length === 0) {
+        ElMessage.warning('Please select the winning player(s) first')
+        return
+      }
+
+      // 计算 High 赢家（6张牌：5张手牌 + 1张公共牌）
+      // Qualifier: 至少一对 9 或以上
+      const solvedHigh = Object.entries(playerHands.value).map(([seat, cards]) => {
+        const allCards = [...cards, ...boardCards.value]
+        const hand = Hand.solve(allCards.map(toSolverCard))
+        const qualified = checkAriHighQualifier(hand)
+        return {
+          seat: Number(seat),
+          hand,
+          qualified,
+        }
+      })
+
+      // 只考虑 qualify 的玩家
+      const qualifiedHighPlayers = solvedHigh.filter((s) => s.qualified)
+
+      let highWinnerSeats: number[] = []
+      let highWinnerDetails = ''
+
+      if (qualifiedHighPlayers.length > 0) {
+        const highWinners = Hand.winners(qualifiedHighPlayers.map((s) => s.hand))
+        highWinnerSeats = qualifiedHighPlayers
+          .filter((s) => highWinners.includes(s.hand))
+          .map((s) => s.seat)
+          .sort((a, b) => a - b)
+
+        highWinnerDetails = qualifiedHighPlayers
+          .filter((s) => highWinnerSeats.includes(s.seat))
+          .map((s) => `Player ${s.seat}: ${s.hand.descr}`)
+          .join('\n')
+      }
+
+      // 计算 Low 赢家（只用5张手牌，A-5规则）
+      const solvedLow = Object.entries(playerHands.value).map(([seat, cards]) => {
+        const lowHand = getAriLowHand(cards)
+        return {
+          seat: Number(seat),
+          lowHand,
+        }
+      })
+
+      // 找出有效的 Low 牌
+      const validLowPlayers = solvedLow.filter((s) => s.lowHand.valid)
+
+      let lowWinnerSeats: number[] = []
+      let lowWinnerDetails = ''
+
+      if (validLowPlayers.length > 0) {
+        // 找出最好的 Low 牌（高牌最低的）
+        let bestLow = validLowPlayers[0]
+        for (const player of validLowPlayers) {
+          if (compareHighCards(player.lowHand.highCards, bestLow.lowHand.highCards) < 0) {
+            bestLow = player
+          }
+        }
+
+        // 找出所有平局的玩家
+        lowWinnerSeats = validLowPlayers
+          .filter((p) => compareHighCards(p.lowHand.highCards, bestLow.lowHand.highCards) === 0)
+          .map((p) => p.seat)
+          .sort((a, b) => a - b)
+
+        lowWinnerDetails = lowWinnerSeats
+          .map((seat) => {
+            const player = solvedLow.find((s) => s.seat === seat)
+            return `Player ${seat}: ${player?.lowHand.cards.join(' ')}`
+          })
+          .join('\n')
+      }
+
+      // 检查 High 答案
+      const highCorrect =
+        highWinnerSeats.length === selectedHighSeats.value.length &&
+        highWinnerSeats.every((seat, i) => seat === selectedHighSeats.value[i])
+
+      // 检查 Low 答案
+      const lowCorrect =
+        lowWinnerSeats.length === selectedLowSeats.value.length &&
+        lowWinnerSeats.every((seat, i) => seat === selectedLowSeats.value[i])
+
+      if (!highCorrect || !lowCorrect) {
+        resultMessage.value =
+          `Wrong ❌\n\n` +
+          `High winner(s): ${highWinnerSeats.length > 0 ? highWinnerSeats.join(', ') : 'No qualifying high'}\n` +
+          `${highWinnerDetails}\n\n` +
+          `Low winner(s): ${lowWinnerSeats.length > 0 ? lowWinnerSeats.join(', ') : 'No qualifying low'}\n` +
+          `${lowWinnerDetails}\n\n` +
+          `Your High answer: ${selectedHighSeats.value.join(', ') || 'None'}\n` +
+          `Your Low answer: ${selectedLowSeats.value.join(', ') || 'None'}`
+        showResult.value = true
+        return
+      }
+
+      ElMessage.success('Correct! 🎉')
+      showFireworks.value = true
+      setTimeout(dealNewHand, 1200)
+      return
+    }
+
+    // Lowball 2-7 模式只需要选择 Low
+    if (gameMode.value === 'lowball-27') {
+      if (selectedLowSeats.value.length === 0) {
+        ElMessage.warning('Please select the winning player(s) first')
+        return
+      }
+
+      // 计算 Lowball 2-7 赢家
+      const solvedLowball27 = Object.entries(playerHands.value).map(([seat, cards]) => {
+        const lowball27Hand = getLowball27Hand(cards)
+        return {
+          seat: Number(seat),
+          lowball27Hand,
+        }
+      })
+
+      // 找出最好的 Lowball 2-7 牌
+      let bestLowball27 = solvedLowball27[0]
+      for (const player of solvedLowball27) {
+        if (
+          player.lowball27Hand.score < bestLowball27.lowball27Hand.score ||
+          (player.lowball27Hand.score === bestLowball27.lowball27Hand.score &&
+            compareHighCards(player.lowball27Hand.highCards, bestLowball27.lowball27Hand.highCards) < 0)
+        ) {
+          bestLowball27 = player
+        }
+      }
+
+      // 找出所有平局的玩家
+      const lowball27WinnerSeats = solvedLowball27
+        .filter(
+          (p) =>
+            p.lowball27Hand.score === bestLowball27.lowball27Hand.score &&
+            compareHighCards(p.lowball27Hand.highCards, bestLowball27.lowball27Hand.highCards) === 0
+        )
+        .map((p) => p.seat)
+        .sort((a, b) => a - b)
+
+      const lowball27Correct =
+        lowball27WinnerSeats.length === selectedLowSeats.value.length &&
+        lowball27WinnerSeats.every((seat, i) => seat === selectedLowSeats.value[i])
+
+      if (!lowball27Correct) {
+        const lowball27WinnerDetails = lowball27WinnerSeats
+          .map((seat) => {
+            const player = solvedLowball27.find((s) => s.seat === seat)
+            return `Player ${seat}: ${player?.lowball27Hand.cards.join(' ')}`
+          })
+          .join('\n')
+
+        resultMessage.value =
+          `Wrong ❌\n\n` +
+          `Winner(s): ${lowball27WinnerSeats.join(', ')}\n` +
+          `${lowball27WinnerDetails}\n\n` +
+          `Your answer: ${selectedLowSeats.value.join(', ') || 'None'}`
+        showResult.value = true
+        return
+      }
+
+      ElMessage.success('Correct! 🎉')
+      showFireworks.value = true
+      setTimeout(dealNewHand, 1200)
+      return
+    }
+
+    // Lowball A-5 模式只需要选择 Low
+    if (gameMode.value === 'lowball-a5') {
+      if (selectedLowSeats.value.length === 0) {
+        ElMessage.warning('Please select the winning player(s) first')
+        return
+      }
+
+      // 计算 Lowball A-5 赢家
+      const solvedLowball = Object.entries(playerHands.value).map(([seat, cards]) => {
+        const lowballHand = getLowballA5Hand(cards)
+        return {
+          seat: Number(seat),
+          lowballHand,
+        }
+      })
+
+      // 找出最好的 Lowball A-5 牌
+      let bestLowball = solvedLowball[0]
+      for (const player of solvedLowball) {
+        if (
+          player.lowballHand.score < bestLowball.lowballHand.score ||
+          (player.lowballHand.score === bestLowball.lowballHand.score &&
+            compareHighCards(player.lowballHand.highCards, bestLowball.lowballHand.highCards) < 0)
+        ) {
+          bestLowball = player
+        }
+      }
+
+      // 找出所有平局的玩家
+      const lowballWinnerSeats = solvedLowball
+        .filter(
+          (p) =>
+            p.lowballHand.score === bestLowball.lowballHand.score &&
+            compareHighCards(p.lowballHand.highCards, bestLowball.lowballHand.highCards) === 0
+        )
+        .map((p) => p.seat)
+        .sort((a, b) => a - b)
+
+      const lowballCorrect =
+        lowballWinnerSeats.length === selectedLowSeats.value.length &&
+        lowballWinnerSeats.every((seat, i) => seat === selectedLowSeats.value[i])
+
+      if (!lowballCorrect) {
+        const lowballWinnerDetails = lowballWinnerSeats
+          .map((seat) => {
+            const player = solvedLowball.find((s) => s.seat === seat)
+            return `Player ${seat}: ${player?.lowballHand.cards.join(' ')}`
+          })
+          .join('\n')
+
+        resultMessage.value =
+          `Wrong ❌\n\n` +
+          `Winner(s): ${lowballWinnerSeats.join(', ')}\n` +
+          `${lowballWinnerDetails}\n\n` +
+          `Your answer: ${selectedLowSeats.value.join(', ') || 'None'}`
+        showResult.value = true
+        return
+      }
+
+      ElMessage.success('Correct! 🎉')
+      showFireworks.value = true
+      setTimeout(dealNewHand, 1200)
+      return
+    }
+
     const answerTimeMs = Date.now() - questionStartAt.value
     function recordWrong(correctValue: { high?: number[]; low?: number[] }) {
       if (hasRecordedWrong.value) return
@@ -1260,9 +2136,10 @@
             anchor-selector=".board-overlay"
             :enabled="isTextureAnalysisEnabled"
           />
-          <!-- 公共牌 (仅在非 7 Card Stud、Razz 和 Badugi 模式下显示) -->
+          <!-- 公共牌 (仅在非 7 Card Stud、Razz、Badugi、Badacey、Badeucey、Lowball A-5、Lowball 2-7 和 Archie 模式下显示) -->
+          <!-- Ari 模式显示 1 张公共牌在第三张牌的位置 -->
           <div
-            v-if="gameMode !== '7stud' && gameMode !== 'razz' && gameMode !== 'badugi'"
+            v-if="gameMode !== '7stud' && gameMode !== 'razz' && gameMode !== 'badugi' && gameMode !== 'badacey' && gameMode !== 'badeucey' && gameMode !== 'lowball-a5' && gameMode !== 'lowball-27' && gameMode !== 'archie'"
             class="community-cards-group"
             :style="{
               top: communityCardsPosition.top,
@@ -1274,7 +2151,10 @@
               v-for="(card, i) in boardCards"
               :key="i"
               class="community-card"
-              :style="{ left: `${i * cardSpacing}px`, zIndex: i + 1 }"
+              :style="{
+                left: gameMode === 'ari' ? `${2 * cardSpacing}px` : `${i * cardSpacing}px`,
+                zIndex: i + 1
+              }"
             >
               <CardFace :card="card" :scale="1" />
             </div>
@@ -1374,18 +2254,18 @@
 
               <!-- Both 状态显示两个 Mini Chips -->
               <div v-if="handStatuses[seat] === 'both'" class="both-chips">
-                <div class="mini-chip high-mini-chip">HIGH</div>
-                <div class="mini-chip low-mini-chip">LOW</div>
+                <div class="mini-chip high-mini-chip">{{ highChipLabel }}</div>
+                <div class="mini-chip low-mini-chip">{{ lowChipLabel }}</div>
               </div>
 
               <!-- High 状态显示 High Chip -->
               <div v-if="handStatuses[seat] === 'high'" class="single-chip">
-                <div class="mini-chip high-mini-chip">HIGH</div>
+                <div class="mini-chip high-mini-chip">{{ highChipLabel }}</div>
               </div>
 
               <!-- Low 状态显示 Low Chip -->
               <div v-if="handStatuses[seat] === 'low'" class="single-chip">
-                <div class="mini-chip low-mini-chip">LOW</div>
+                <div class="mini-chip low-mini-chip">{{ lowChipLabel }}</div>
               </div>
             </div>
           </div>
@@ -1524,18 +2404,20 @@
   }
 
   .mini-chip {
-    width: 32px;
+    min-width: 32px;
     height: 32px;
-    border-radius: 50%;
+    padding: 0 8px;
+    border-radius: 16px;
     border: 2px solid #fff;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 9px;
+    font-size: 8px;
     font-weight: 700;
     font-family: 'Segoe UI', 'Arial Rounded MT Bold', 'Helvetica Rounded', Arial, sans-serif;
     color: #fff;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    white-space: nowrap;
   }
 
   .high-mini-chip {
