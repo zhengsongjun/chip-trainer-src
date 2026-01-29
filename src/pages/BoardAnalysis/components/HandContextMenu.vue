@@ -9,8 +9,8 @@
     x: number
     y: number
     seat: number
-    gameType: 'high' | 'high-low' | 'a5-low' | '2-7-low' | 'badugi'
-    gameMode: 'holdem' | 'omaha' | 'bigo' | '7stud' | 'razz' | 'badugi'
+    gameType: 'high' | 'high-low' | 'a5-low' | '2-7-low' | 'badugi' | 'lowball-a5-type' | 'lowball-27-type' | 'ari-type' | 'archie-type' | 'badacey-type' | 'badeucey-type'
+    gameMode: 'holdem' | 'omaha' | 'bigo' | '7stud' | 'razz' | 'badugi' | 'lowball-a5' | 'lowball-27' | 'ari' | 'archie' | 'badacey' | 'badeucey'
   }>()
 
   const emit = defineEmits<{
@@ -21,14 +21,35 @@
   }>()
 
   const showHigh = computed(() => {
-    // Razz 和 Badugi 模式下不显示 High
-    return props.gameMode !== 'razz' && props.gameMode !== 'badugi'
+    // Razz、Badugi、Lowball A-5 和 Lowball 2-7 模式下不显示 High
+    // Ari、Archie、Badacey 和 Badeucey 模式显示 High
+    // Badacey 和 Badeucey 的 High 实际上是 Badugi
+    return props.gameMode !== 'razz' && props.gameMode !== 'badugi' && props.gameMode !== 'lowball-a5' && props.gameMode !== 'lowball-27'
   })
 
   const showLow = computed(() => {
     return (
       props.gameType === 'high-low' && (props.gameMode === 'omaha' || props.gameMode === 'bigo' || props.gameMode === '7stud')
-    ) || props.gameMode === 'razz' || props.gameMode === 'badugi' // Razz 和 Badugi 模式下显示 Low
+    ) || props.gameMode === 'razz' || props.gameMode === 'badugi' || props.gameMode === 'lowball-a5' || props.gameMode === 'lowball-27' || props.gameMode === 'ari' || props.gameMode === 'archie' || props.gameMode === 'badacey' || props.gameMode === 'badeucey' // Badacey 和 Badeucey 模式也显示 Low
+  })
+
+  // Badacey 和 Badeucey 模式下的标签文本
+  const highLabel = computed(() => {
+    if (props.gameMode === 'badacey') {
+      return 'Mark Badugi'
+    } else if (props.gameMode === 'badeucey') {
+      return 'Mark Badeugi 2-7'
+    }
+    return markHigh.value
+  })
+
+  const lowLabel = computed(() => {
+    if (props.gameMode === 'badacey') {
+      return 'Mark Lowball A-5'
+    } else if (props.gameMode === 'badeucey') {
+      return 'Mark Lowball 2-7'
+    }
+    return markLow.value
   })
 </script>
 
@@ -41,12 +62,12 @@
   >
     <div v-if="showHigh" class="menu-item" @click="emit('mark-high', seat)">
       <span class="menu-dot high"></span>
-      <span class="menu-text">{{ markHigh }}</span>
+      <span class="menu-text">{{ highLabel }}</span>
     </div>
 
     <div v-if="showLow" class="menu-item" @click="emit('mark-low', seat)">
       <span class="menu-dot low"></span>
-      <span class="menu-text">{{ markLow }}</span>
+      <span class="menu-text">{{ lowLabel }}</span>
     </div>
 
     <div class="menu-item danger" @click="emit('mark-kill', seat)">
