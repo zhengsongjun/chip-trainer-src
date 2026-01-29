@@ -157,7 +157,6 @@
         <h2 class="section-title">已激活服务</h2>
         <span class="section-desc">查看当前账号已开通的功能</span>
       </div>
-
       <el-button type="primary" size="default" @click="openActivateDialog"> 激活服务 </el-button>
     </div>
 

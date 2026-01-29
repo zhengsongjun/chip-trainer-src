@@ -92,10 +92,10 @@ export function analyzeBoardTexture(board: Card[]): TextureBaseResult {
   ranks.forEach((r) => (rankCount[r] = (rankCount[r] || 0) + 1))
   const hasPair = Object.values(rankCount).some((v) => v >= 2)
 
-  /* Flush (Omaha 教学：公共牌 ≥2 同花即可算潜力) */
+  /* Flush (Hold'em/Omaha/Big O：公共牌 ≥3 同花才算有同花听牌) */
   const suitCount: Record<string, number> = {}
   suits.forEach((s) => (suitCount[s] = (suitCount[s] || 0) + 1))
-  const hasFlush = Object.values(suitCount).some((v) => v >= 2)
+  const hasFlush = Object.values(suitCount).some((v) => v >= 3)
 
   /* Straight potential */
   const hasStraight = getStraightWindows(board).length > 0
