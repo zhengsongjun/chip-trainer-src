@@ -136,7 +136,13 @@
         {{ isRegister ? '注册账号' : '登录' }}
       </h2>
 
-      <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-position="top"
+        @submit.prevent="handleSubmit"
+      >
         <el-form-item label="邮箱" prop="email">
           <el-input v-model="form.email" placeholder="请输入邮箱" />
         </el-form-item>
@@ -160,6 +166,7 @@
         </el-form-item>
 
         <el-button
+          native-type="submit"
           type="primary"
           :loading="loading"
           style="width: 100%; margin-top: 12px"

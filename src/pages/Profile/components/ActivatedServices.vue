@@ -6,6 +6,7 @@
   import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
   import { onAuthStateChanged } from 'firebase/auth'
   import img from '@/assets/bg/reg.png'
+  import { useUserBootstrap } from '@/composables/useUserBootstrap'
 
   /* ================= 用户 ================= */
   const email = ref<string | null>(null)
@@ -22,7 +23,15 @@
   const dialogVisible = ref(false)
   const activationCode = ref('')
   const activating = ref(false)
+  function getServiceStatus(expiresAt: string) {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
 
+    const expireDate = new Date(expiresAt)
+    expireDate.setHours(0, 0, 0, 0)
+
+    return expireDate < today ? 'expired' : 'active'
+  }
   onMounted(() => {
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -127,6 +136,9 @@
       })
 
       ElMessage.success('激活成功')
+      if (auth.currentUser) {
+        await useUserBootstrap(auth.currentUser)
+      }
       dialogVisible.value = false
       await loadUserServices()
     } catch (e) {
@@ -151,8 +163,21 @@
 
     <el-table v-if="services.length" :data="services">
       <el-table-column prop="name" label="服务名称" />
+
       <el-table-column prop="expiresAt" label="到期时间" />
+
+      <el-table-column label="状态" width="100">
+        <template #default="{ row }">
+          <el-tag
+            :type="getServiceStatus(row.expiresAt) === 'expired' ? 'danger' : 'success'"
+            size="small"
+          >
+            {{ getServiceStatus(row.expiresAt) === 'expired' ? '已过期' : '使用中' }}
+          </el-tag>
+        </template>
+      </el-table-column>
     </el-table>
+
     <div v-else class="empty-wrapper">
       <div class="wechat-box">
         <p class="wechat-text">暂无已激活服务</p>
