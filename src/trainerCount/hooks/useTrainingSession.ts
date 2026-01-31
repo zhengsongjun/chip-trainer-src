@@ -1,4 +1,5 @@
-import { ref, shallowRef } from 'vue'
+import { ref, shallowRef, watchEffect } from 'vue'
+import { sessionState, setSession } from '@/stores/session'
 import type {
   TrainingSessionDraft,
   TrainingSessionSummary,
@@ -11,14 +12,23 @@ import { writeDailyStats } from '../writers/writeDailyStats'
 function now(): EpochMs {
   return Date.now()
 }
+
 const QUESTIONS_PER_SESSION = 10
+
 export function useTrainingSession<
   Payload = unknown,
   Mode extends string = string,
   SubMode extends string = string,
 >() {
-  const session = shallowRef<TrainingSessionDraft<Payload, Mode, SubMode> | null>(null)
+  const session = shallowRef<TrainingSessionDraft<Payload, Mode, SubMode> | null>(
+    sessionState.session
+  )
   const isSubmitting = shallowRef(false)
+
+  // 监听 sessionState 全局 session 更新
+  watchEffect(() => {
+    session.value = sessionState.session
+  })
 
   function startSession(params: {
     sessionId: string
@@ -32,13 +42,15 @@ export function useTrainingSession<
       mode: params.mode,
       subMode: params.subMode,
       durationMs: 0,
-      createdAt: now(),
+      createdAt: new Date(), // 确保 createdAt 是 Date 对象
     }
 
     session.value = {
       summary,
       answers: [],
     }
+
+    setSession(session.value)
   }
 
   function accumulateStats(session: TrainingSessionDraft<Payload, Mode, SubMode>) {
@@ -89,14 +101,17 @@ export function useTrainingSession<
     console.log('[训练] 开始提交当前 session')
 
     const finished = session.value
-    finished.summary.durationMs = Date.now() - finished.summary.createdAt
+    // 确保 createdAt 是一个有效的 Date 对象
+    const createdAt = new Date(finished.summary.createdAt) // 如果是字符串，转成 Date 类型
+
+    finished.summary.durationMs = Date.now() - createdAt.getTime()
 
     const statsDelta = accumulateStats(finished)
 
     await writeTrainingSession(finished)
     await writeDailyStats(
       finished.summary.userId,
-      finished.summary.createdAt.toString().slice(0, 10),
+      createdAt.toISOString().slice(0, 10), // 使用新的 Date 类型
       statsDelta
     )
 
@@ -104,7 +119,7 @@ export function useTrainingSession<
 
     const prevSummary = finished.summary
 
-    session.value = {
+    setSession({
       summary: {
         sessionId: crypto.randomUUID(),
         userId: prevSummary.userId,
@@ -114,13 +129,18 @@ export function useTrainingSession<
         createdAt: now(),
       },
       answers: [],
-    }
+    })
 
     isSubmitting.value = false
     console.log('[训练] 新一轮 session 已自动开启')
   }
 
   function answerQuestion(answer: Omit<TrainingAnswerItem<Payload, Mode, SubMode>, 'answeredAt'>) {
+    if (isSubmitting.value) {
+      console.warn('[训练] 当前正在提交答案，请稍后再试')
+      return
+    }
+
     if (!session.value) {
       console.warn('[训练] 无法提交答案：没有活动的 session')
       return
