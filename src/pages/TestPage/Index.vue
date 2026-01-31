@@ -1,70 +1,97 @@
 <script setup lang="ts">
+  import { useTrainingSession } from '@/trainerCount/hooks/useTrainingSession'
   import { ref } from 'vue'
 
-  import { createSessionContext } from '@/trainer/session/session.create'
-  import { updateSessionContext } from '@/trainer/session/session.update'
-  import { SessionManager } from '@/trainer/session/session.manager'
-  import { FirestoreSessionPersister } from '@/trainer/storage/firestore.session'
+  /**
+   * Payload 类型：题目结构
+   */
+  type QuestionPayload = {
+    a: number
+    b: number
+    correctAnswer: number
+  }
 
-  const manager = ref<SessionManager | null>(null)
-  const context = ref<any>(null)
+  const { startSession, answerQuestion, finishSession, session } = useTrainingSession<
+    QuestionPayload,
+    'math',
+    'add'
+  >()
+
+  const currentIndex = ref(1)
+  const inputAnswer = ref<number | null>(null)
+  const finished = ref(false)
 
   function start() {
-    context.value = createSessionContext(
-      'test-user-id', // 先写死
-      'chip',
-      'cash'
-    )
-
-    const persister = new FirestoreSessionPersister()
-
-    manager.value = new SessionManager(context.value, persister, {
-      maxDurationMs: 10 * 60 * 1000, // 10 分钟
-      idleTimeoutMs: 3 * 60 * 1000, // 3 分钟
+    startSession({
+      sessionId: crypto.randomUUID(),
+      userId: 'test-user',
+      mode: 'math',
+      subMode: 'add',
     })
 
-    console.log('Session started', context.value.sessionId)
+    currentIndex.value = 1
+    inputAnswer.value = null
+    finished.value = false
+
+    console.log('🟢 session started')
   }
 
-  function answerCorrect() {
-    if (!context.value || !manager.value) return
+  function submitAnswer() {
+    if (!session.value) return
+    if (inputAnswer.value === null) return
 
-    updateSessionContext(context.value, {
-      isCorrect: true,
-      answerTimeMs: 1200,
+    const a = 1
+    const b = currentIndex.value
+    const correct = a + b
+
+    const payload: QuestionPayload = {
+      a,
+      b,
+      correctAnswer: correct,
+    }
+
+    const isCorrect = inputAnswer.value === correct
+
+    answerQuestion({
+      isCorrect,
+      payload,
+      userAnswer: inputAnswer.value,
+      answerTimeMs: Math.floor(Math.random() * 1000) + 300,
+      mode: 'math',
+      subMode: 'add',
     })
 
-    manager.value.afterAnswer()
-    console.log('Answer correct')
-  }
+    console.log(`第 ${currentIndex.value} 题答完`, { input: inputAnswer.value, correct })
 
-  function answerWrong() {
-    if (!context.value || !manager.value) return
+    inputAnswer.value = null
+    currentIndex.value++
 
-    updateSessionContext(context.value, {
-      isCorrect: false,
-      answerTimeMs: 1800,
-    })
+    if (currentIndex.value > 10) {
+      const result = finishSession()
+      finished.value = true
 
-    manager.value.afterAnswer()
-    console.log('Answer wrong')
-  }
-
-  async function finish() {
-    if (!manager.value) return
-
-    await manager.value.flush(true)
-    console.log('Session saved')
+      console.log('🟣 session finished（10 题）')
+      console.log(result)
+    }
   }
 </script>
 
 <template>
   <div style="padding: 24px">
-    <h2>Trainer Test Page</h2>
+    <h2>TrainingCount Test Page</h2>
 
     <button @click="start">开始训练</button>
-    <button @click="answerCorrect">答对一题</button>
-    <button @click="answerWrong">答错一题</button>
-    <button @click="finish">结束并保存</button>
+
+    <div v-if="session && !finished" style="margin-top: 16px">
+      <p>第 {{ currentIndex }} 题： 1 + {{ currentIndex }} =</p>
+
+      <input type="number" v-model.number="inputAnswer" placeholder="输入你的答案" />
+
+      <button @click="submitAnswer">提交</button>
+    </div>
+
+    <div v-if="finished" style="margin-top: 16px">
+      <p>训练结束，请查看 console 输出</p>
+    </div>
   </div>
 </template>

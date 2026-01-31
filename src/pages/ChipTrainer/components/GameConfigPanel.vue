@@ -1,16 +1,7 @@
 <script setup lang="ts">
-  import { computed } from 'vue'
   import useChipTraining from '../../../i18n/customHook/chipTraining/useChipTraining'
-  import {
-    CashPresetKey,
-    createCashColorChecker,
-    getCashPresetOptions,
-  } from '../presetsConfig/cashPresets'
-  import {
-    createTournamentColorChecker,
-    getTournamentPresetOptions,
-    TournamentPresetKey,
-  } from '../presetsConfig/tournamentPresets'
+  import { getCashPresetOptions } from '../presetsConfig/cashPresets'
+  import { getTournamentPresetOptions } from '../presetsConfig/tournamentPresets'
 
   const {
     cashGame,
@@ -29,20 +20,6 @@
     orange,
     grey,
   } = useChipTraining()
-
-  // defineProps<{
-  //   gameType: 'cash' | 'tournament'
-
-  //   /* cash */
-  //   enabledColors: string[]
-  //   whiteRange?: '1-20' | '20-60'
-  //   cashPreset: string
-
-  //   /* tournament */
-  //   tournamentColors: string[]
-  //   blackRange?: '1-19' | '20-60'
-  //   tournamentPreset: string
-  // }>()
 
   const props = defineProps<{
     gameType: 'cash' | 'tournament'
@@ -66,14 +43,6 @@
     (e: 'update:blackRange', val: '1-19' | '20-60'): void
     (e: 'update:tournamentPreset', val: string): void
   }>()
-
-  const isCashColorEnabled = computed(() => {
-    return createCashColorChecker(props.cashPreset as CashPresetKey)
-  })
-
-  const isTournamentPresetColorEnabled = computed(() => {
-    return createTournamentColorChecker(props.tournamentPreset as TournamentPresetKey)
-  })
 </script>
 
 <template>

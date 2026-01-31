@@ -10,11 +10,10 @@
   import useChipTrainingI18n from '../../i18n/customHook/chipTraining/useChipTraining'
   import useUISystem from '@/i18n/customHook/UI/useUISystem'
   import { useUserStore } from '@/stores/user'
-  import { update, initSession, flush, addDetail } from '@/trainer'
-  import { createSessionContext } from '@/trainer/session/session.create'
   import { CASH_PRESETS, type CashPresetKey } from './presetsConfig/cashPresets'
   import { TOURNAMENT_PRESETS, type TournamentPresetKey } from './presetsConfig/tournamentPresets'
-
+  import { useTrainingSession } from '@/trainerCount/hooks/useTrainingSession'
+  const { startSession, answerQuestion } = useTrainingSession()
   /* ================= i18n ================= */
   const {
     pageTitle,
@@ -171,26 +170,20 @@
 
     feedback.value = isCorrect ? 'correct' : 'wrong'
     userInput.value = ''
-    const answerTimeMs = Date.now() - questionStartAt.value
 
-    update({
+    const answerTimeMs = Date.now() - questionStartAt.value
+    answerQuestion({
       isCorrect,
       answerTimeMs,
+      payload: {
+        correctValue: correctValue.value,
+        chipGroups: chipGroups.value,
+        preset: gameType.value === 'cash' ? cashPreset.value : tournamentPreset.value,
+      },
+      userAnswer: val,
+      mode: 'chip',
+      subMode: gameType.value,
     })
-
-    if (!isCorrect) {
-      addDetail({
-        type: 'wrong_case',
-        payload: {
-          userAnswer: val,
-          correctValue: correctValue.value,
-          chipGroups: chipGroups.value,
-        },
-      })
-    }
-
-    // ⭐️ 只通知 session，是否 flush 由 session 决定
-    await flush(false)
 
     if (isCorrect) {
       setTimeout(newRound, 700)
@@ -204,12 +197,6 @@
   /* ================= gameType 切换 = Session 边界 ================= */
   watch(gameType, async (type, prevType) => {
     if (type === prevType) return
-
-    // ⭐️ 只要 session 里有题，就强制 flush
-    await flush(true)
-
-    // ⚠️ 不要再 initSession！
-    // SessionManager 在 flush 后已经 reset
 
     userInput.value = ''
     feedback.value = 'idle'
@@ -302,18 +289,12 @@
         })
   })
 
-  /* ================= 初始化 Session（来自 store） ================= */
-  watch(
-    () => userStore.profile,
-    (profile) => {
-      if (!profile) return
-
-      initSession(
-        createSessionContext({ uid: profile.uid, email: profile.email }, 'chip', gameType.value)
-      )
-    },
-    { immediate: true }
-  )
+  startSession({
+    sessionId: crypto.randomUUID(),
+    userId: userStore.profile!.uid,
+    mode: 'chip',
+    subMode: gameType.value,
+  })
 
   newRound()
 </script>

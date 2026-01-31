@@ -13,6 +13,12 @@ const router = createRouter({
       path: '/login',
       component: Login,
     },
+    {
+      path: '/test',
+      name: 'Test',
+      component: () => import('@/pages/TestPage/Index.vue'),
+      meta: { layout: 'simple' }, // 无 Sidebar
+    },
     /* ================= 主 Layout ================= */
     {
       path: '/',
@@ -44,12 +50,7 @@ const router = createRouter({
           component: () => import('@/pages/Profile/Index.vue'),
           meta: { layout: 'simple' }, // 无 Sidebar
         },
-        {
-          path: 'test',
-          name: 'Test',
-          component: () => import('@/pages/TestPage/Index.vue'),
-          meta: { layout: 'simple' }, // 无 Sidebar
-        },
+
         {
           path: 'activation',
           name: 'Activation',
