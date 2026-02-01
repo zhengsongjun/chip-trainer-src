@@ -1,65 +1,72 @@
 <script setup lang="ts">
   import { computed } from 'vue'
-  import { Document, CircleCheck, Timer } from '@element-plus/icons-vue'
+  import { Document, CircleCheck, Timer, Stopwatch } from '@element-plus/icons-vue'
 
   interface Summary {
+    totalDurationMs: number
     totalQuestions: number
-    accuracy: number // 0~1
-    avgAnswerTimeMs: number // ms
-    medianAnswerTimeMs: number // ms
+    accuracy: number
+    avgTimePerQuestionMs: number
   }
 
   const props = defineProps<{
     summary: Summary | null
   }>()
 
+  // 正确率（百分比）
   const accuracyPercent = computed(() =>
     props.summary ? Math.round(props.summary.accuracy * 100) : 0
   )
 
+  // 平均每题用时（秒，1 位小数）
   const avgTimeSec = computed(() =>
-    props.summary ? Math.round(props.summary.avgAnswerTimeMs / 100) / 10 : 0
+    props.summary ? Math.round(props.summary.avgTimePerQuestionMs / 100) / 10 : 0
   )
 
-  const medianTimeSec = computed(() =>
-    props.summary ? Math.round(props.summary.medianAnswerTimeMs / 100) / 10 : 0
+  // 总练习时长（分钟）
+  const totalDurationMin = computed(() =>
+    props.summary ? Math.round(props.summary.totalDurationMs / 60000) : 0
   )
 </script>
 
 <template>
   <div class="stat-cards">
+    <!-- 练习题数 -->
     <div class="ui-panel stat-card">
       <div class="stat-header">
         <el-icon class="stat-icon"><Document /></el-icon>
-        <span class="stat-title">练习题数</span>
+        <span class="stat-title">累计答题</span>
       </div>
       <div class="stat-value stat-neutral">
         {{ props.summary?.totalQuestions ?? 0 }}
       </div>
     </div>
 
+    <!-- 正确率 -->
     <div class="ui-panel stat-card">
       <div class="stat-header">
         <el-icon class="stat-icon success"><CircleCheck /></el-icon>
-        <span class="stat-title">总正确率</span>
+        <span class="stat-title">整体正确率</span>
       </div>
       <div class="stat-value stat-success">{{ accuracyPercent }}%</div>
     </div>
 
+    <!-- 平均每题用时 -->
     <div class="ui-panel stat-card">
       <div class="stat-header">
         <el-icon class="stat-icon time"><Timer /></el-icon>
-        <span class="stat-title">平均答题时间</span>
+        <span class="stat-title">平均每题用时</span>
       </div>
       <div class="stat-value stat-time">{{ avgTimeSec }} s</div>
     </div>
 
+    <!-- 总练习时长 -->
     <div class="ui-panel stat-card">
       <div class="stat-header">
-        <el-icon class="stat-icon time"><Timer /></el-icon>
-        <span class="stat-title">中位答题时间</span>
+        <el-icon class="stat-icon time"><Stopwatch /></el-icon>
+        <span class="stat-title">累计练习时长</span>
       </div>
-      <div class="stat-value stat-time">{{ medianTimeSec }} s</div>
+      <div class="stat-value stat-time">{{ totalDurationMin }} min</div>
     </div>
   </div>
 </template>

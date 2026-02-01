@@ -1,12 +1,7 @@
 <script setup lang="ts">
   import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
   import * as echarts from 'echarts'
-  // ⭐ 临时 mock：按 date 映射对 / 错
-  const mockResultMap: Record<string, { correct: number; wrong: number }> = {
-    '2026-01-08': { correct: 18, wrong: 6 },
-    '2026-01-09': { correct: 12, wrong: 8 },
-    '2026-01-10': { correct: 20, wrong: 5 },
-  }
+  import { getModeLabel } from '@/utils/countString'
 
   const chartRef = ref<HTMLDivElement | null>(null)
   let chart: echarts.ECharts | null = null
@@ -15,10 +10,20 @@
   const props = defineProps<{
     data: {
       date: string
+      total: number
       correct: number
       wrong: number
+      byMode: Record<
+        string,
+        {
+          questions: number
+          correct: number
+          wrong: number
+        }
+      >
     }[]
   }>()
+
   watch(
     () => props.data,
     () => {
@@ -30,7 +35,7 @@
         },
         series: [
           {
-            data: props.data.map((d) => d.correct + d.wrong),
+            data: props.data.map((d) => d.total),
           },
         ],
       })
@@ -53,23 +58,88 @@
           const item = props.data.find((d) => d.date === date)
           if (!item) return ''
 
-          const { correct, wrong } = item
-          const total = correct + wrong
-          const rate = total ? Math.round((correct / total) * 100) : 0
+          const { total, correct, wrong, byMode } = item
+          const accuracy = total ? Math.round((correct / total) * 100) : 0
+
+          const accuracyColor = accuracy >= 70 ? '#2ecc71' : accuracy >= 40 ? '#f1c40f' : '#e74c3c'
+
+          const modeLines = Object.entries(byMode)
+            .map(([mode, v]) => {
+              const rate = v.questions > 0 ? Math.round((v.correct / v.questions) * 100) : 0
+
+              return `
+        <div style="
+          display: flex;
+          justify-content: space-between;
+          margin-left: 8px;
+          padding: 2px 0;
+          font-size: 12px;
+          color: #555;
+        ">
+          <span>• ${getModeLabel(mode)}</span>
+          <span>${v.questions} 题 · 正确率 ${rate}%</span>
+        </div>
+      `
+            })
+            .join('')
 
           return `
-      <div>
-        <div style="font-weight: 600; margin-bottom: 6px;">
-          ${date}
-        </div>
+    <div style="
+      padding: 10px 12px;
+      min-width: 180px;
+      line-height: 1.6;
+      font-size: 12px;
+      color: #333;
+    ">
+      <!-- 日期 -->
+      <div style="
+        font-weight: 600;
+        font-size: 13px;
+        margin-bottom: 6px;
+      ">
+        ${date}
+      </div>
+
+      <!-- 核心数据 -->
+      <div style="color: #666;">
         <div>练习总数：${total}</div>
         <div>正确：${correct}</div>
         <div>错误：${wrong}</div>
-        <div style="margin-top: 6px; font-weight: 500;">
-          正确率：${rate}%
-        </div>
       </div>
-    `
+
+      <!-- 正确率（重点） -->
+      <div style="
+        margin-top: 8px;
+        font-weight: 600;
+        color: ${accuracyColor};
+      ">
+        整体正确率：${accuracy}%
+      </div>
+
+      <!-- 分割线 -->
+      ${
+        modeLines
+          ? `
+            <div style="
+              height: 1px;
+              background: #eee;
+              margin: 8px 0;
+            "></div>
+
+            <div style="
+              font-weight: 500;
+              color: #666;
+              margin-bottom: 2px;
+            ">
+              模式分布
+            </div>
+
+            ${modeLines}
+          `
+          : ''
+      }
+    </div>
+  `
         },
       },
       xAxis: {

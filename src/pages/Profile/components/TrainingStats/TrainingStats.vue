@@ -5,8 +5,6 @@
   import StatCards from './StatCards.vue'
   import DailyVolumeChart from './DailyVolumeChart.vue'
   import AccuracyTrendChart from './AccuracyTrendChart.vue'
-  import ErrorAnalysisTabs from './ErrorAnalysisTabs/ErrorAnalysisTabs.vue'
-  import PracticeTimeDistribution from './PracticeTimeDistribution.vue'
   import { useTrainingAnalysis } from '@/composables/useTrainingAnalysis'
   import { useUserStore } from '@/stores/user'
   /* ================= 训练类型选择 ================= */
@@ -22,14 +20,11 @@
   >({
     type: '7d',
   })
-  const { summary, daily, accuracyTrend, chipStructure, answerDiff } = useTrainingAnalysis({
+  const { summary, daily, accuracyTrend } = useTrainingAnalysis({
     userId,
     range,
   })
-  watchEffect(() => {
-    console.log('summary', summary.value)
-    console.log('daliy', daily.value)
-  })
+
   onMounted(async () => {
     await nextTick()
     // 🔴 关键：等页面真正显示完
