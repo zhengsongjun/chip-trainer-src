@@ -190,12 +190,21 @@ export function useTrainingAnalysis(options: { userId: Ref<string>; range: Ref<T
     return [...sessions.value]
       .sort((a, b) => a.date.localeCompare(b.date))
       .map((s) => {
-        const total = Number(s.totalQuestions) || 0
-        const correct = Number(s.correctCount) || 0
+        const byMode: Record<string, { questions: number; correct: number; wrong: number }> = {}
+
+        if (s.byMode) {
+          Object.entries(s.byMode).forEach(([mode, v]: any) => {
+            byMode[mode] = {
+              questions: Number(v.questions) || 0,
+              correct: Number(v.correct) || 0,
+              wrong: Number(v.wrong) || 0,
+            }
+          })
+        }
 
         return {
           date: s.date,
-          accuracy: total > 0 ? Math.round((correct / total) * 100) : 0,
+          byMode,
         }
       })
   })

@@ -154,7 +154,58 @@
 
     <el-table-column label="筹码错题">
       <template #default="{ row }">
-        {{ row.chipCount }}
+        <el-tooltip placement="top" effect="light" :show-after="200">
+          <template #content>
+            <div class="tt">
+              <div class="tt-title">筹码错题分布</div>
+
+              <div v-if="row.chipSubModes.cash > 0" class="tt-row">
+                <span>现金局</span>
+                <span>{{ row.chipSubModes.cash }}</span>
+              </div>
+
+              <div v-if="row.chipSubModes.tournament > 0" class="tt-row">
+                <span>锦标赛</span>
+                <span>{{ row.chipSubModes.tournament }}</span>
+              </div>
+            </div>
+          </template>
+
+          <span class="summary-num">
+            {{ row.chipCount }}
+          </span>
+        </el-tooltip>
+      </template>
+    </el-table-column>
+
+    <el-table-column label="牌面分析错题">
+      <template #default="{ row }">
+        <el-tooltip placement="top" effect="light" :show-after="200">
+          <template #content>
+            <div class="tt">
+              <div class="tt-title">牌面分析错题分布</div>
+
+              <template v-if="Object.values(row.boardAnalysisSubModes).some((v) => v > 0)">
+                <div
+                  v-for="[mode, count] in Object.entries(row.boardAnalysisSubModes).filter(
+                    ([_, count]) => count > 0
+                  )"
+                  :key="mode"
+                  class="tt-row"
+                >
+                  <span>{{ mode }}</span>
+                  <span>{{ count }}</span>
+                </div>
+              </template>
+
+              <div v-else class="tt-row muted">暂无细分数据</div>
+            </div>
+          </template>
+
+          <span class="summary-num">
+            {{ row.boardAnalysisCount }}
+          </span>
+        </el-tooltip>
       </template>
     </el-table-column>
   </el-table>
@@ -219,5 +270,25 @@
 
   .muted {
     color: #909399;
+  }
+  .summary-num {
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .tt {
+    min-width: 160px;
+    font-size: 13px;
+  }
+
+  .tt-title {
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .tt-row {
+    display: flex;
+    justify-content: space-between;
+    line-height: 1.6;
   }
 </style>

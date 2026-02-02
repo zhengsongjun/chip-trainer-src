@@ -36,16 +36,6 @@
   <div class="training-stats-page">
     <!-- ================= 顶部控制区 ================= -->
     <div class="stats-header">
-      <el-select
-        v-model="trainingType"
-        size="default"
-        placeholder="选择训练类型"
-        class="training-type-select"
-      >
-        <el-option label="筹码反应" value="chip" />
-        <!-- <el-option label="牌面分析" value="board" /> -->
-      </el-select>
-
       <div class="time-panel" :class="{ active: range.type === 'custom' }">
         <TimeRangeSelector v-model="range" />
       </div>

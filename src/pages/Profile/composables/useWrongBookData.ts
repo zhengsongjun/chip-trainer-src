@@ -22,13 +22,21 @@ export type WrongBookRow = {
     cash: number
     tournament: number
   }
-  cardCount: number
+  boardAnalysisCount: number
+  boardAnalysisSubModes: {
+    holdem: number
+    omaha: number
+    bigo: number
+    '7stud': number
+    razz: number
+    badugi: number
+  }
 }
 
 export type WrongAnswer = {
   id: string
   sessionId: string
-  mode: 'chip' | 'card'
+  mode: 'chip' | 'board-analysis'
   subMode: string
   payload: any
   answeredAt: number
@@ -92,10 +100,17 @@ export function useWrongBook() {
             date,
             chipCount: 0,
             chipSubModes: { cash: 0, tournament: 0 },
-            cardCount: 0,
+            boardAnalysisCount: 0,
+            boardAnalysisSubModes: {
+              holdem: 0,
+              omaha: 0,
+              bigo: 0,
+              '7stud': 0,
+              razz: 0,
+              badugi: 0,
+            },
           })
         }
-
         if (!answersByDate[date]) {
           answersByDate[date] = []
         }
@@ -126,6 +141,16 @@ export function useWrongBook() {
             row.chipCount++
             if (a.subMode === 'cash') row.chipSubModes.cash++
             if (a.subMode === 'tournament') row.chipSubModes.tournament++
+          }
+
+          if (mode === 'board-analysis') {
+            const row = dateMap.get(date)!
+
+            row.boardAnalysisCount++
+
+            if (row.boardAnalysisSubModes[a.subMode] !== undefined) {
+              row.boardAnalysisSubModes[a.subMode]++
+            }
           }
         }
       }

@@ -45,7 +45,7 @@
 
   function initChart() {
     if (!chartRef.value || chart) return
-
+    const allModes = Array.from(new Set(props.data.flatMap((d) => Object.keys(d.byMode))))
     chart = echarts.init(chartRef.value)
     chart.setOption({
       grid: { top: 20, left: 40, right: 20, bottom: 30 },
@@ -150,14 +150,19 @@
         type: 'value',
         minInterval: 1,
       },
-      series: [
-        {
-          name: '练习总数',
-          type: 'bar',
-          barWidth: '40%',
-          data: props.data.map((d) => d.correct + d.wrong),
-        },
-      ],
+      legend: {
+        top: 0,
+      },
+
+      series: allModes.map((mode) => ({
+        name: getModeLabel(mode), // legend 名字
+        type: 'bar',
+        barWidth: '30%',
+        data: props.data.map((d) => {
+          const m = d.byMode[mode]
+          return m ? m.questions : 0
+        }),
+      })),
     })
   }
 

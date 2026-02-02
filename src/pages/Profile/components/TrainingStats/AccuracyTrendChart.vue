@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
   import * as echarts from 'echarts'
+  import { getModeLabel } from '@/utils/countString'
 
   const chartRef = ref<HTMLDivElement | null>(null)
 
@@ -8,8 +9,19 @@
   let observer: ResizeObserver | null = null
 
   const props = defineProps<{
-    data: { date: string; accuracy: number }[]
+    data: {
+      date: string
+      byMode: Record<
+        string,
+        {
+          questions: number
+          correct: number
+          wrong: number
+        }
+      >
+    }[]
   }>()
+
   watch(
     () => props.data,
     () => {
@@ -31,9 +43,8 @@
 
   function initChart() {
     if (!chartRef.value || chart) return
-
+    const allModes = Array.from(new Set(props.data.flatMap((d) => Object.keys(d.byMode))))
     chart = echarts.init(chartRef.value)
-
     chart.setOption({
       grid: {
         top: 24,
@@ -64,25 +75,21 @@
           lineStyle: { color: '#ebeef5' },
         },
       },
-      series: [
-        {
-          type: 'line',
-          smooth: true,
-          data: props.data.map((d) => d.accuracy),
-          symbol: 'circle',
-          symbolSize: 6,
-          lineStyle: {
-            width: 2,
-            color: 'var(--stat-success)',
-          },
-          itemStyle: {
-            color: 'var(--stat-success)',
-          },
-          areaStyle: {
-            color: 'rgba(47,125,76,0.08)',
-          },
-        },
-      ],
+      legend: {
+        top: 0,
+      },
+      series: allModes.map((mode) => ({
+        name: getModeLabel(mode), // legend 用
+        type: 'line',
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 6,
+        data: props.data.map((d) => {
+          const m = d.byMode[mode]
+          if (!m || m.questions === 0) return 0
+          return Math.round((m.correct / m.questions) * 100)
+        }),
+      })),
     })
   }
 
