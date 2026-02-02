@@ -10,12 +10,16 @@
   import TextureAnalysisPanel from './components/TextureAnalysisPanel.vue'
   import HandContextMenu from './components/HandContextMenu.vue'
   import Fireworks from '@/components/Fireworks.vue'
+  import { useTrainingSession } from '@/trainerCount/hooks/useTrainingSession'
   import useBoardAnalysisTrainingI18n from '@/i18n/customHook/useBoardAnalysis'
-
+  import { useUserStore } from '@/stores/user'
   const { pageTitle, markHigh, markLow, kill, close } = useBoardAnalysisTrainingI18n()
 
   /* =============================== 基础状态 =============================== */
-
+  const userStore = useUserStore()
+  const { startSession, answerQuestion } = useTrainingSession()
+  const hasRecordedWrong = ref(false)
+  const questionStartAt = ref(Date.now())
   const showFireworks = ref(false)
   const playerCount = ref<number>(2)
   const gameMode = ref<'holdem' | 'omaha' | 'bigo' | '7stud' | 'razz' | 'badugi'>('omaha')
@@ -255,6 +259,8 @@
   }
 
   function dealNewHand() {
+    hasRecordedWrong.value = false
+    questionStartAt.value = Date.now()
     const deck = shuffle(fullDeck)
 
     // 🎯 随机选座位
@@ -795,6 +801,31 @@
   }
 
   function checkAnswer() {
+    const answerTimeMs = Date.now() - questionStartAt.value
+    function recordWrong() {
+      if (hasRecordedWrong.value) return
+
+      answerQuestion({
+        isCorrect: false,
+        answerTimeMs,
+        payload: {
+          boardCards: boardCards.value,
+          playerHands: playerHands.value,
+          playerStudCards: playerStudCards.value,
+          gameMode: gameMode.value,
+          gameType: gameType.value,
+          activeSeats: activeSeats.value,
+        },
+        userAnswer: {
+          high: selectedHighSeats.value,
+          low: selectedLowSeats.value,
+        },
+        mode: 'board-analysis',
+        subMode: gameMode.value,
+      })
+
+      hasRecordedWrong.value = true
+    }
     // Razz 模式只需要选择 Low
     if (gameMode.value === 'razz') {
       if (selectedLowSeats.value.length === 0) {
@@ -838,6 +869,7 @@
         lowWinnerSeats.every((seat, i) => seat === selectedLowSeats.value[i])
 
       if (!lowCorrect) {
+        recordWrong()
         const lowWinnerDetails = lowWinnerSeats
           .map((seat) => {
             const player = solvedLow.find((s) => s.seat === seat)
@@ -853,7 +885,27 @@
         showResult.value = true
         return
       }
-
+      answerQuestion({
+        isCorrect: true,
+        answerTimeMs,
+        payload: {
+          boardCards: boardCards.value,
+          playerHands: playerHands.value,
+          playerStudCards: playerStudCards.value,
+          gameMode: gameMode.value,
+          gameType: gameType.value,
+          activeSeats: activeSeats.value,
+          correctValue: {
+            low: lowWinnerSeats,
+          },
+        },
+        userAnswer: {
+          high: selectedHighSeats.value ?? [],
+          low: selectedLowSeats.value ?? [],
+        },
+        mode: 'board-analysis',
+        subMode: gameMode.value,
+      })
       ElMessage.success('Correct! 🎉')
       showFireworks.value = true
       setTimeout(dealNewHand, 1200)
@@ -895,6 +947,7 @@
         badugiWinnerSeats.every((seat, i) => seat === selectedLowSeats.value[i])
 
       if (!badugiCorrect) {
+        recordWrong()
         const badugiWinnerDetails = badugiWinnerSeats
           .map((seat) => {
             const player = solvedBadugi.find((s) => s.seat === seat)
@@ -912,7 +965,27 @@
         showResult.value = true
         return
       }
-
+      answerQuestion({
+        isCorrect: true,
+        answerTimeMs,
+        payload: {
+          boardCards: boardCards.value,
+          playerHands: playerHands.value,
+          playerStudCards: playerStudCards.value,
+          gameMode: gameMode.value,
+          gameType: gameType.value,
+          activeSeats: activeSeats.value,
+          correctValue: {
+            low: badugiWinnerSeats,
+          },
+        },
+        userAnswer: {
+          high: selectedHighSeats.value ?? [],
+          low: selectedLowSeats.value ?? [],
+        },
+        mode: 'board-analysis',
+        subMode: gameMode.value,
+      })
       ElMessage.success('Correct! 🎉')
       showFireworks.value = true
       setTimeout(dealNewHand, 1200)
@@ -951,7 +1024,7 @@
       .filter((s) => winners.includes(s.hand))
       .map((s) => s.seat)
       .sort((a, b) => a - b)
-
+    const finalLowWinnerSeats = gameType.value === 'high-low' ? lowWinnerSeats : []
     let isCorrect =
       winnerSeats.length === selectedHighSeats.value.length &&
       winnerSeats.every((seat, i) => seat === selectedHighSeats.value[i])
@@ -1039,6 +1112,7 @@
       }
 
       if (!isCorrect) {
+        recordWrong()
         resultMessage.value =
           `Wrong ❌\n\n` +
           `High winner(s): ${highWinnerSeats.join(', ')}\n` +
@@ -1052,6 +1126,7 @@
     } else {
       // High only 模式
       if (!isCorrect) {
+        recordWrong()
         resultMessage.value =
           `Wrong ❌\n\n` +
           `Correct winner(s): ${highWinnerSeats.join(', ')}\n\n` +
@@ -1062,9 +1137,32 @@
     }
 
     if (isCorrect) {
+      answerQuestion({
+        isCorrect: true,
+        answerTimeMs,
+        payload: {
+          boardCards: boardCards.value,
+          playerHands: playerHands.value,
+          playerStudCards: playerStudCards.value,
+          gameMode: gameMode.value,
+          gameType: gameType.value,
+          activeSeats: activeSeats.value,
+          correctValue: {
+            high: highWinnerSeats,
+            low: finalLowWinnerSeats,
+          },
+        },
+        userAnswer: {
+          high: selectedHighSeats.value ?? [],
+          low: selectedLowSeats.value ?? [],
+        },
+        mode: 'board-analysis',
+        subMode: gameMode.value,
+      })
       ElMessage.success('Correct! 🎉')
       showFireworks.value = true
       setTimeout(dealNewHand, 1200)
+      return
     }
   }
 
@@ -1074,6 +1172,14 @@
     dealNewHand()
     await nextTick()
     boardRef.value = document.querySelector('.board')
+    if (userStore.profile) {
+      startSession({
+        sessionId: crypto.randomUUID(),
+        userId: userStore.profile.uid,
+        mode: 'board-analysis',
+        subMode: gameMode.value,
+      })
+    }
   })
 
   watch(playerCount, async () => {
