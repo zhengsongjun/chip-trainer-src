@@ -1,20 +1,24 @@
 <script setup lang="ts">
+  import { watch } from 'vue'
   import ChipStack from './ChipStack.vue'
-  interface ChipGroup {
+  export interface ChipGroup {
     color: string
     count: number
   }
 
-  defineProps<{
+  const props = defineProps<{
     groups: ChipGroup[]
   }>()
+  watch(props, () => {
+    console.log(props.groups)
+  })
 </script>
 
 <template>
   <section class="chip-board">
     <div class="chip-stacks">
       <div
-        v-for="(group, idx) in groups"
+        v-for="(group, idx) in props.groups"
         :key="`${group.color}-${group.count}-${idx}`"
         class="chip-stack"
       >

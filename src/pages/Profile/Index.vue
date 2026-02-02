@@ -5,9 +5,11 @@
 
   import ActivatedServices from './components/ActivatedServices.vue'
   import TrainingStats from './components/TrainingStats/TrainingStats.vue'
+  import WrongCaseList from './components/WrongCaseList/Index.vue'
 
   /* ================= 用户信息 ================= */
   const email = ref<string | null>(null)
+  const activeTab = ref<'services' | 'stats' | 'wrongCaseList'>('wrongCaseList')
 
   onMounted(() => {
     onAuthStateChanged(auth, (user) => {
@@ -23,23 +25,23 @@
         <!-- ================= 账户信息 ================= -->
         <div class="ui-panel">
           <h2 class="section-title">账户信息</h2>
-
           <el-descriptions :column="1" border>
             <el-descriptions-item label="邮箱">
               {{ email }}
             </el-descriptions-item>
           </el-descriptions>
         </div>
-
         <!-- ================= Tabs ================= -->
         <div class="ui-panel tab-panel">
-          <el-tabs>
-            <el-tab-pane label="激活服务">
+          <el-tabs v-model="activeTab">
+            <el-tab-pane label="激活服务" name="services">
               <ActivatedServices />
             </el-tab-pane>
-
-            <el-tab-pane label="个人训练统计">
+            <el-tab-pane label="个人训练统计" name="stats">
               <TrainingStats />
+            </el-tab-pane>
+            <el-tab-pane label="错题本" name="wrongCaseList">
+              <WrongCaseList />
             </el-tab-pane>
           </el-tabs>
         </div>

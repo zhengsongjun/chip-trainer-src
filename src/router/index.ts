@@ -50,7 +50,12 @@ const router = createRouter({
           component: () => import('@/pages/Profile/Index.vue'),
           meta: { layout: 'simple' }, // 无 Sidebar
         },
-
+        {
+          path: 'wrong-practice',
+          name: 'WrongPractice',
+          component: () => import('@/pages/WrongPractice/Index.vue'),
+          meta: { layout: 'simple' }, // 有 Sidebar
+        },
         {
           path: 'activation',
           name: 'Activation',

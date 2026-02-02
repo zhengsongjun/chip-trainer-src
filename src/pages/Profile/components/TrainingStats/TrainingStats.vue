@@ -5,7 +5,7 @@
   import StatCards from './StatCards.vue'
   import DailyVolumeChart from './DailyVolumeChart.vue'
   import AccuracyTrendChart from './AccuracyTrendChart.vue'
-  import { useTrainingAnalysis } from '@/composables/useTrainingAnalysis'
+  import { useTrainingAnalysis } from './../../composables/useTrainingAnalysis'
   import { useUserStore } from '@/stores/user'
   /* ================= 训练类型选择 ================= */
   const trainingType = ref<'chip' | 'board'>('chip')

@@ -85,7 +85,7 @@
 
   const showAnswer = ref(false)
   const showChipConfig = ref(false)
-
+  const hasRecordedWrong = ref(false)
   // 标志位：是否正在应用预设（用于避免手动修改时触发预设重置）
   const isApplyingCashPreset = ref(false)
   const isApplyingTournamentPreset = ref(false)
@@ -134,6 +134,7 @@
 
   /* ================= 出题 ================= */
   function newRound() {
+    hasRecordedWrong.value = false
     round.value++
     userInput.value = ''
     feedback.value = 'idle'
@@ -161,6 +162,7 @@
 
   async function onSubmit() {
     if (!canSubmit.value) return
+
     const val = Number(userInput.value)
 
     const isCorrect =
@@ -172,22 +174,51 @@
     userInput.value = ''
 
     const answerTimeMs = Date.now() - questionStartAt.value
-    answerQuestion({
-      isCorrect,
-      answerTimeMs,
-      payload: {
-        correctValue: correctValue.value,
-        chipGroups: chipGroups.value,
-        preset: gameType.value === 'cash' ? cashPreset.value : tournamentPreset.value,
-      },
-      userAnswer: val,
-      mode: 'chip',
-      subMode: gameType.value,
-    })
+
+    // ===============================
+    // ⭐ Session 统计去重逻辑（仅在 index.vue）
+    // ===============================
 
     if (isCorrect) {
+      // ✅ 正确：永远允许写入 session
+      answerQuestion({
+        isCorrect: true,
+        answerTimeMs,
+        payload: {
+          correctValue: correctValue.value,
+          chipGroups: chipGroups.value,
+          preset: gameType.value === 'cash' ? cashPreset.value : tournamentPreset.value,
+        },
+        userAnswer: val,
+        mode: 'chip',
+        subMode: gameType.value,
+      })
+
+      // 正确后进入下一题
       setTimeout(newRound, 700)
+      return
     }
+
+    // ❌ 错误的情况
+    if (!hasRecordedWrong.value) {
+      // ⭐ 第一次答错：写入 session
+      answerQuestion({
+        isCorrect: false,
+        answerTimeMs,
+        payload: {
+          correctValue: correctValue.value,
+          chipGroups: chipGroups.value,
+          preset: gameType.value === 'cash' ? cashPreset.value : tournamentPreset.value,
+        },
+        userAnswer: val,
+        mode: 'chip',
+        subMode: gameType.value,
+      })
+
+      hasRecordedWrong.value = true
+    }
+
+    // ⭐ 后续重复答错：什么都不做（只更新 UI feedback）
   }
 
   function toggleShowAnswer() {
