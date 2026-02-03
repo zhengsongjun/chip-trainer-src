@@ -802,7 +802,7 @@
 
   function checkAnswer() {
     const answerTimeMs = Date.now() - questionStartAt.value
-    function recordWrong() {
+    function recordWrong(correctValue: { high?: number[]; low?: number[] }) {
       if (hasRecordedWrong.value) return
 
       answerQuestion({
@@ -815,6 +815,7 @@
           gameMode: gameMode.value,
           gameType: gameType.value,
           activeSeats: activeSeats.value,
+          correctValue,
         },
         userAnswer: {
           high: selectedHighSeats.value,
@@ -869,7 +870,7 @@
         lowWinnerSeats.every((seat, i) => seat === selectedLowSeats.value[i])
 
       if (!lowCorrect) {
-        recordWrong()
+        recordWrong({ low: lowWinnerSeats })
         const lowWinnerDetails = lowWinnerSeats
           .map((seat) => {
             const player = solvedLow.find((s) => s.seat === seat)
@@ -947,7 +948,9 @@
         badugiWinnerSeats.every((seat, i) => seat === selectedLowSeats.value[i])
 
       if (!badugiCorrect) {
-        recordWrong()
+        recordWrong({
+          low: badugiWinnerSeats,
+        })
         const badugiWinnerDetails = badugiWinnerSeats
           .map((seat) => {
             const player = solvedBadugi.find((s) => s.seat === seat)
@@ -1024,7 +1027,7 @@
       .filter((s) => winners.includes(s.hand))
       .map((s) => s.seat)
       .sort((a, b) => a - b)
-    const finalLowWinnerSeats = gameType.value === 'high-low' ? lowWinnerSeats : []
+    let finalLowWinnerSeats: number[] = []
     let isCorrect =
       winnerSeats.length === selectedHighSeats.value.length &&
       winnerSeats.every((seat, i) => seat === selectedHighSeats.value[i])
@@ -1094,7 +1097,7 @@
           )
           .map((p) => p.seat)
           .sort((a, b) => a - b)
-
+        finalLowWinnerSeats = lowWinnerSeats
         lowWinnerDetails = lowWinnerSeats
           .map((seat) => {
             const player = solvedLow.find((s) => s.seat === seat)
@@ -1112,7 +1115,10 @@
       }
 
       if (!isCorrect) {
-        recordWrong()
+        recordWrong({
+          high: highWinnerSeats,
+          low: lowWinnerSeats,
+        })
         resultMessage.value =
           `Wrong ❌\n\n` +
           `High winner(s): ${highWinnerSeats.join(', ')}\n` +
@@ -1126,7 +1132,9 @@
     } else {
       // High only 模式
       if (!isCorrect) {
-        recordWrong()
+        recordWrong({
+          high: highWinnerSeats,
+        })
         resultMessage.value =
           `Wrong ❌\n\n` +
           `Correct winner(s): ${highWinnerSeats.join(', ')}\n\n` +

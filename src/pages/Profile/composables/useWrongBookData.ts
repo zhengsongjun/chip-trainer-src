@@ -7,21 +7,23 @@ import {
   where,
   limit,
   startAfter,
-  Timestamp,
   QueryDocumentSnapshot,
   DocumentData,
 } from 'firebase/firestore'
 import { db } from '@/firebase'
+import type { WrongDailyDoc } from '@/trainerCount/types/WrongDaily.types'
 
 /* ================= Types ================= */
 
 export type WrongBookRow = {
   date: string
+
   chipCount: number
   chipSubModes: {
     cash: number
     tournament: number
   }
+
   boardAnalysisCount: number
   boardAnalysisSubModes: {
     holdem: number
@@ -33,29 +35,9 @@ export type WrongBookRow = {
   }
 }
 
-export type WrongAnswer = {
-  id: string
-  sessionId: string
-  mode: 'chip' | 'board-analysis'
-  subMode: string
-  payload: any
-  answeredAt: number
-}
-
 type FetchResult = {
   rows: WrongBookRow[]
-  answersByDate: Record<string, WrongAnswer[]>
   lastDoc: QueryDocumentSnapshot<DocumentData> | null
-}
-
-/* ================= Utils ================= */
-
-function formatDate(ts: Timestamp) {
-  const d = ts.toDate()
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
 }
 
 /* ================= Hook ================= */
@@ -69,8 +51,9 @@ export function useWrongBook() {
     cursor?: QueryDocumentSnapshot<DocumentData> | null
   }): Promise<FetchResult> {
     const { userId, pageSize, cursor } = params
+
     if (!userId) {
-      return { rows: [], answersByDate: {}, lastDoc: null }
+      return { rows: [], lastDoc: null }
     }
 
     loading.value = true
@@ -78,92 +61,53 @@ export function useWrongBook() {
     try {
       const constraints: any[] = [
         where('userId', '==', userId),
-        orderBy('createdAt', 'desc'),
+        orderBy('updatedAt', 'desc'),
         limit(pageSize),
       ]
-      if (cursor) constraints.push(startAfter(cursor))
 
-      const sessionSnap = await getDocs(query(collection(db, 'user_sessions'), ...constraints))
+      if (cursor) {
+        constraints.push(startAfter(cursor))
+      }
 
-      const dateMap = new Map<string, WrongBookRow>()
-      const answersByDate: Record<string, WrongAnswer[]> = {}
+      const snap = await getDocs(query(collection(db, 'wrong_daily'), ...constraints))
 
-      for (const sessionDoc of sessionSnap.docs) {
-        const session = sessionDoc.data()
-        if (!session.createdAt) continue
+      const rows: WrongBookRow[] = []
 
-        const date = formatDate(session.createdAt)
-        const mode = session.mode
+      for (const doc of snap.docs) {
+        const d = doc.data() as WrongDailyDoc
 
-        if (!dateMap.has(date)) {
-          dateMap.set(date, {
-            date,
-            chipCount: 0,
-            chipSubModes: { cash: 0, tournament: 0 },
-            boardAnalysisCount: 0,
-            boardAnalysisSubModes: {
-              holdem: 0,
-              omaha: 0,
-              bigo: 0,
-              '7stud': 0,
-              razz: 0,
-              badugi: 0,
-            },
-          })
-        }
-        if (!answersByDate[date]) {
-          answersByDate[date] = []
-        }
+        rows.push({
+          date: d.date,
 
-        const answersSnap = await getDocs(
-          query(
-            collection(db, 'user_sessions', sessionDoc.id, 'answers'),
-            where('isCorrect', '==', false)
-          )
-        )
+          chipCount: d.byMode?.chip ?? 0,
+          chipSubModes: {
+            cash: d.bySubMode?.cash ?? 0,
+            tournament: d.bySubMode?.tournament ?? 0,
+          },
 
-        for (const doc of answersSnap.docs) {
-          const a = doc.data()
-
-          // 保存完整 answer（练习用）
-          answersByDate[date].push({
-            id: doc.id,
-            sessionId: sessionDoc.id,
-            mode,
-            subMode: a.subMode,
-            payload: a.payload,
-            answeredAt: a.answeredAt?.toMillis ? a.answeredAt.toMillis() : a.answeredAt,
-          })
-
-          // 表格统计
-          if (mode === 'chip') {
-            const row = dateMap.get(date)!
-            row.chipCount++
-            if (a.subMode === 'cash') row.chipSubModes.cash++
-            if (a.subMode === 'tournament') row.chipSubModes.tournament++
-          }
-
-          if (mode === 'board-analysis') {
-            const row = dateMap.get(date)!
-
-            row.boardAnalysisCount++
-
-            if (row.boardAnalysisSubModes[a.subMode] !== undefined) {
-              row.boardAnalysisSubModes[a.subMode]++
-            }
-          }
-        }
+          boardAnalysisCount: d.byMode?.['board-analysis'] ?? 0,
+          boardAnalysisSubModes: {
+            holdem: d.bySubMode?.holdem ?? 0,
+            omaha: d.bySubMode?.omaha ?? 0,
+            bigo: d.bySubMode?.bigo ?? 0,
+            '7stud': d.bySubMode?.['7stud'] ?? 0,
+            razz: d.bySubMode?.razz ?? 0,
+            badugi: d.bySubMode?.badugi ?? 0,
+          },
+        })
       }
 
       return {
-        rows: Array.from(dateMap.values()),
-        answersByDate,
-        lastDoc: sessionSnap.docs.at(-1) ?? null,
+        rows,
+        lastDoc: snap.docs.at(-1) ?? null,
       }
     } finally {
       loading.value = false
     }
   }
 
-  return { loading, fetchWrongBookRows }
+  return {
+    loading,
+    fetchWrongBookRows,
+  }
 }

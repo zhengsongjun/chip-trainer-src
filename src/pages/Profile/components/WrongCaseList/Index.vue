@@ -5,11 +5,11 @@
   import WrongBookColumnDialog from './WrongBookColumnDialog.vue'
   import { useUserStore } from '@/stores/user'
   import { useWrongPracticeStore } from '@/stores/wrongPractice'
-  import {
-    useWrongBook,
-    type WrongBookRow,
-    type WrongAnswer,
-  } from '../../composables/useWrongBookData'
+  import { useWrongBook, type WrongBookRow } from '../../composables/useWrongBookData'
+
+  // ⭐ 新增：专用服务函数（下面我会给你实现）
+  import { fetchWrongPracticeItems } from '@/services/fetchWrongPracticeItems'
+
   const router = useRouter()
   const wrongPracticeStore = useWrongPracticeStore()
 
@@ -17,11 +17,20 @@
   const userStore = useUserStore()
   const userId = computed(() => userStore.profile?.uid ?? '')
 
-  /* ================= subMode 配置 ================= */
-  const SUBMODES = [
-    { key: 'cash', label: '现金局' },
-    { key: 'tournament', label: '锦标赛' },
-  ]
+  const SUBMODES = {
+    chip: [
+      { key: 'cash', label: '现金局' },
+      { key: 'tournament', label: '锦标赛' },
+    ],
+    'board-analysis': [
+      { key: 'holdem', label: "Hold'em" },
+      { key: 'omaha', label: 'Omaha' },
+      { key: 'bigo', label: '7 Card Stud' },
+      { key: '7stud', label: '7 Card Stud' },
+      { key: 'razz', label: 'Razz' },
+      { key: 'badugi', label: 'Badugi' },
+    ],
+  } as const
 
   const selectedSubModes = ref<Record<string, boolean>>({
     cash: true,
@@ -36,7 +45,6 @@
 
   /* ================= 数据 ================= */
   const rows = ref<WrongBookRow[]>([])
-  const answersByDate = ref<Record<string, WrongAnswer[]>>({})
 
   const { loading, fetchWrongBookRows } = useWrongBook()
 
@@ -49,13 +57,14 @@
     userId,
     async (uid) => {
       if (!uid) return
+
       const res = await fetchWrongBookRows({
         userId: uid,
         pageSize: pageSize.value,
         cursor: null,
       })
+
       rows.value = res.rows
-      answersByDate.value = res.answersByDate
       lastCursor.value = res.lastDoc
     },
     { immediate: true }
@@ -75,20 +84,37 @@
     dialogVisible.value = true
   }
 
-  function onConfirmPractice(subModes: Record<string, boolean>) {
+  // ⭐ 核心改动：确认时再查一次明细
+
+  async function onConfirmPractice(subModes: Record<string, boolean>) {
+    if (!userId.value) return
+
     const dates = selectedRows.value.map((r) => r.date)
 
-    const pickedAnswers = dates.flatMap((d) =>
-      (answersByDate.value[d] || []).filter((a) => subModes[a.subMode])
-    )
+    try {
+      const practiceItems = await fetchWrongPracticeItems({
+        userId: userId.value,
+        dates,
+        subModes,
+      })
 
-    // 写入 pinia（会同步到 localStorage）
-    wrongPracticeStore.setPracticeItems(pickedAnswers)
+      if (practiceItems.length === 0) {
+        ElMessage.warning('所选条件下没有可练习的错题')
+        return
+      }
 
-    // 跳转到错题练习页
-    router.push('/wrong-practice')
+      // 写入 pinia
+      wrongPracticeStore.setPracticeItems(practiceItems)
+
+      // 跳转练习页
+      router.push('/wrong-practice')
+    } catch (e) {
+      console.error('[wrong-practice] fetch failed', e)
+      ElMessage.error('加载错题失败，请稍后重试')
+    }
   }
 
+  /* ================= 分页变化 ================= */
   watch(pageSize, async () => {
     if (!userId.value) return
 
@@ -103,7 +129,6 @@
     })
 
     rows.value = res.rows
-    answersByDate.value = res.answersByDate
     lastCursor.value = res.lastDoc
   })
 
@@ -111,11 +136,9 @@
     if (!userId.value) return
     if (newPage === oldPage) return
 
-    // 👉 下一页
     if (newPage > oldPage) {
       cursorStack.value.push(lastCursor.value)
     } else {
-      // 👉 上一页
       cursorStack.value.pop()
     }
 
@@ -129,7 +152,6 @@
     })
 
     rows.value = res.rows
-    answersByDate.value = res.answersByDate
     lastCursor.value = res.lastDoc
   })
 </script>
@@ -138,7 +160,7 @@
   <WrongBookColumnDialog
     v-model="dialogVisible"
     v-model:value="selectedSubModes"
-    :sub-modes="SUBMODES"
+    :tree="SUBMODES"
     @confirm="onConfirmPractice"
   />
   <el-button type="primary" @click="applyPractice">去练习</el-button>

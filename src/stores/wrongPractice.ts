@@ -4,9 +4,7 @@ import { defineStore } from 'pinia'
  * 单道错题（直接来自 answers）
  */
 export type WrongPracticeItem = {
-  sessionId: string
-  answerId: string
-  mode: 'chip' | 'card'
+  mode: 'chip' | 'board-analysis'
   subMode: string
   payload: any
   answeredAt: number

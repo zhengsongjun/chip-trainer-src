@@ -15,7 +15,7 @@ function now(): EpochMs {
   return Date.now()
 }
 
-const QUESTIONS_PER_SESSION = 3
+const QUESTIONS_PER_SESSION = 10
 
 type WrongAccumulator<Mode extends string, SubMode extends string> = {
   totalWrong: number

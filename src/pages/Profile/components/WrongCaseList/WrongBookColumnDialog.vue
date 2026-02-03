@@ -4,11 +4,14 @@
 
   const props = defineProps<{
     modelValue: boolean
-    value: Record<string, boolean>
-    subModes: {
-      key: string
-      label: string
-    }[]
+    value: Record<string, boolean> // subMode -> checked
+    tree: Record<
+      string,
+      {
+        key: string
+        label: string
+      }[]
+    >
   }>()
 
   const emit = defineEmits<{
@@ -24,16 +27,16 @@
 
   const treeRef = ref<InstanceType<typeof ElTree> | null>(null)
 
-  const treeData = computed(() => [
-    {
-      key: 'chip',
-      label: '筹码错题',
-      children: props.subModes.map((m) => ({
+  const treeData = computed(() => {
+    return Object.entries(props.tree).map(([mode, subModes]) => ({
+      key: mode,
+      label: mode === 'chip' ? '筹码错题' : '牌面分析错题',
+      children: subModes.map((m) => ({
         key: m.key,
         label: m.label,
       })),
-    },
-  ])
+    }))
+  })
 
   async function onOpen() {
     await nextTick()
@@ -49,8 +52,10 @@
 
     const result: Record<string, boolean> = {}
 
-    for (const m of props.subModes) {
-      result[m.key] = checked.has(m.key)
+    for (const subModes of Object.values(props.tree)) {
+      for (const m of subModes) {
+        result[m.key] = checked.has(m.key)
+      }
     }
 
     emit('update:value', result)
