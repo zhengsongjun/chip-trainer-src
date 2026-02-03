@@ -48,7 +48,7 @@
     const allModes = Array.from(new Set(props.data.flatMap((d) => Object.keys(d.byMode))))
     chart = echarts.init(chartRef.value)
     chart.setOption({
-      grid: { top: 20, left: 40, right: 20, bottom: 30 },
+      grid: { top: 30, left: 40, right: 20, bottom: 30 },
       tooltip: {
         trigger: 'axis',
         formatter: (params: any[]) => {

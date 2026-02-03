@@ -7,6 +7,7 @@
   import AccuracyTrendChart from './AccuracyTrendChart.vue'
   import { useTrainingAnalysis } from './../../composables/useTrainingAnalysis'
   import { useUserStore } from '@/stores/user'
+  import WrongPracticeChart from './WrongPracticeChart.vue'
   /* ================= 训练类型选择 ================= */
   const trainingType = ref<'chip' | 'board'>('chip')
   type RangeType = 'all' | '7d' | '30d' | 'custom'
@@ -20,7 +21,7 @@
   >({
     type: '7d',
   })
-  const { summary, daily, accuracyTrend } = useTrainingAnalysis({
+  const { summary, daily, accuracyTrend, wrongPracticeDaily } = useTrainingAnalysis({
     userId,
     range,
   })
@@ -48,13 +49,16 @@
 
     <!-- ================= 图表分析 ================= -->
     <div class="stats-charts">
-      <div class="chart-panel">
+      <div class="chart-panel" style="flex: 3">
         <DailyVolumeChart :data="daily" />
       </div>
 
-      <div class="chart-panel">
+      <div class="chart-panel" style="flex: 2">
         <AccuracyTrendChart :data="accuracyTrend" />
       </div>
+    </div>
+    <div class="stats-panel">
+      <WrongPracticeChart :data="wrongPracticeDaily" />
     </div>
   </div>
 </template>
@@ -70,8 +74,8 @@
 
   .stats-header {
     display: flex;
-    align-items: flex-start; /* 关键 */
-    justify-content: space-between;
+    align-items: center; /* 关键 */
+    justify-content: flex-end;
   }
 
   .range-wrapper {
@@ -89,13 +93,16 @@
   }
 
   .stats-charts {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-6);
+    display: flex;
+    gap: 24px;
+    height: 360px; /* 👈 关键：控制整行高度 */
   }
-
   .chart-panel {
-    min-height: 320px;
+    flex: 1;
+    height: 100%; /* 👈 关键 */
+    min-height: unset; /* 👈 去掉 min-height 干扰 */
+    background: #fff;
+    border-radius: 16px;
   }
 
   .time-panel {
@@ -117,5 +124,11 @@
     box-shadow:
       0 2px 6px rgba(0, 0, 0, 0.04),
       0 12px 24px rgba(0, 0, 0, 0.06);
+  }
+  .stats-panel {
+    margin-top: 24px;
+    height: 420px; /* 👈 关键 */
+    background: #fff;
+    border-radius: 16px;
   }
 </style>

@@ -306,7 +306,6 @@
   .ui-main {
     flex: 1;
     display: flex;
-    min-height: 0;
   }
 
   .ui-sidebar {
@@ -321,6 +320,7 @@
 
   .ui-content {
     flex: 1;
-    overflow: auto;
+    height: calc(100vh - 56px);
+    overflow-y: scroll;
   }
 </style>

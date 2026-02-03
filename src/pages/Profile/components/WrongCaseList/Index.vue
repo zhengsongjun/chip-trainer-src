@@ -163,7 +163,9 @@
     :tree="SUBMODES"
     @confirm="onConfirmPractice"
   />
-  <el-button type="primary" @click="applyPractice">去练习</el-button>
+  <div class="header-opeartor">
+    <el-button type="primary" @click="applyPractice">去练习</el-button>
+  </div>
   <el-table
     :data="rows"
     stripe
@@ -252,6 +254,10 @@
 </template>
 
 <style>
+  .header-opeartor {
+    display: flex;
+    justify-content: right;
+  }
   .summary-num {
     font-weight: 600;
     cursor: pointer;
@@ -274,16 +280,14 @@
   }
 
   .table-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 16px;
+    width: 100%;
+    margin-top: 12px;
   }
 
   .footer-left {
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: right;
   }
 
   .page-size {

@@ -98,7 +98,7 @@
 
 <template>
   <div class="practice-page">
-    {{ currentItem?.payload?.correctValue }}
+    <!-- {{ currentItem?.payload?.correctValue }} -->
     <div class="practice-body">
       <!-- 中间练习区 -->
       <main class="practice-stage">
@@ -106,7 +106,7 @@
           <ChipBoardPractice :groups="currentItem?.payload?.chipGroups" @confirm="onSubmitAnswer" />
         </template>
 
-        <template v-if="currentItem?.mode === 'board-analysis'">
+        <template v-else-if="currentItem?.mode === 'board-analysis'">
           <div class="borad-stage">
             <PokerBoard
               :active-seats="currentItem.payload.activeSeats"
@@ -117,7 +117,9 @@
               :game-type="currentItem.payload.gameType"
               @change="onBoardChange"
             />
-            <button @click="boardAnalysisSubmit">提交</button>
+            <div class="submit-wrapper">
+              <el-button type="primary" @click="boardAnalysisSubmit">提交</el-button>
+            </div>
           </div>
         </template>
         <template v-else>
@@ -125,7 +127,6 @@
         </template>
       </main>
     </div>
-
     <!-- 右侧纵向进度条 -->
     <VerticalProgress :current="current" :total="total" />
   </div>
@@ -149,7 +150,11 @@
     padding: 20px;
     gap: 20px;
   }
-
+  .submit-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
   /* 中间练习区 */
   .practice-stage {
     flex: 1;

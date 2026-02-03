@@ -72,6 +72,9 @@
 </template>
 
 <style scoped>
+  .stat-icon {
+    font-size: 28px !important;
+  }
   .stat-cards {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -94,7 +97,7 @@
   }
 
   .stat-title {
-    font-size: 13px;
+    font-size: 14px;
     color: var(--color-text-secondary);
     line-height: 1;
   }
@@ -117,6 +120,7 @@
 
   /* 数值 */
   .stat-value {
+    text-align: center;
     margin-top: 12px;
     font-size: 28px;
     font-weight: 600;

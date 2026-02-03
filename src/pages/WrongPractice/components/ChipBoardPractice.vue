@@ -21,7 +21,13 @@
   <div class="practice-panel">
     <ChipBoard :groups="props.groups" />
     <div class="input-area">
-      <input v-model="inputValue" type="text" class="text-input" placeholder="请输入内容" />
+      <input
+        style="width: 200px"
+        v-model="inputValue"
+        type="text"
+        class="text-input"
+        placeholder="请输入内容"
+      />
       <button class="submit-btn" @click="onSubmit">提交</button>
     </div>
   </div>
@@ -36,12 +42,12 @@
 
   .input-area {
     display: flex;
+    justify-content: center;
     gap: 12px;
     align-items: center;
   }
 
   .text-input {
-    flex: 1;
     padding: 8px 10px;
     border-radius: 8px;
     border: 1px solid #dcdfe6;

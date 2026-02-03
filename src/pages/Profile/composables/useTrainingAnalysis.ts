@@ -12,6 +12,13 @@ export type TimeRange =
   | { type: '30d' }
   | { type: 'custom'; start: number; end: number }
 
+export type WrongPracticeDaily = {
+  date: string // YYYY-MM-DD
+  total: number
+  byMode: Record<string, number>
+  bySubMode: Record<string, number>
+}
+
 /* ========================
  * Hook
  * ====================== */
@@ -22,6 +29,43 @@ export function useTrainingAnalysis(options: { userId: Ref<string>; range: Ref<T
 
   const sessions = ref<any[]>([])
   const wrongCases = ref<any[]>([])
+  const wrongPracticeDaily = ref<WrongPracticeDaily[]>([])
+
+  /* ========================
+   * Fetch Wrong Practice Daily
+   * ====================== */
+  const fetchWrongPracticeDaily = async () => {
+    const uid = options.userId.value
+    if (!uid) return
+
+    loading.value = true
+    error.value = null
+
+    try {
+      const conditions = [where('userId', '==', uid)]
+
+      if (rangeCondition.value) {
+        conditions.push(
+          where('date', '>=', rangeCondition.value.startDate),
+          where('date', '<=', rangeCondition.value.endDate)
+        )
+      }
+
+      const ref = collection(db, 'wrong_practice_daily')
+      const q = query(ref, ...conditions)
+
+      const snapshot = await getDocs(q)
+
+      wrongPracticeDaily.value = snapshot.docs
+        .map((doc) => doc.data() as WrongPracticeDaily)
+        .sort((a, b) => a.date.localeCompare(b.date))
+    } catch (err: any) {
+      error.value = err
+      console.error(err)
+    } finally {
+      loading.value = false
+    }
+  }
 
   /* ========================
    * Time Range → Firestore 条件
@@ -112,6 +156,7 @@ export function useTrainingAnalysis(options: { userId: Ref<string>; range: Ref<T
     [() => options.userId.value, () => options.range.value],
     () => {
       fetchSessions()
+      fetchWrongPracticeDaily()
     },
     { immediate: true, deep: true }
   )
@@ -245,5 +290,6 @@ export function useTrainingAnalysis(options: { userId: Ref<string>; range: Ref<T
     summary,
     daily,
     accuracyTrend,
+    wrongPracticeDaily,
   }
 }
