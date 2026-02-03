@@ -86,12 +86,6 @@
           :props="treeProps"
         />
       </div>
-      <!-- 
-      <div class="tree-actions">
-        <el-button size="small" @click="checkAll">全选</el-button>
-        <el-button size="small" @click="uncheckAll">全不选</el-button>
-        <el-button size="small" @click="resetToDefault">重置</el-button>
-      </div> -->
     </div>
 
     <template #footer>

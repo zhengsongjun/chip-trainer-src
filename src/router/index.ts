@@ -4,7 +4,7 @@ import ChipTrainer from '@/pages/ChipTrainer/Index.vue'
 import Login from '@/pages/Login/Index.vue'
 import BoardAnalysis from '@/pages/BoardAnalysis/Index.vue'
 import { useUserStore } from '@/stores/user'
-import { beaconFlush } from '@/trainer'
+import { useTrainingRuntimeStore } from '@/stores/trainingRuntime'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -81,9 +81,20 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
+  const runtimeStore = useTrainingRuntimeStore()
+  if (runtimeStore.activeSession) {
+    navigator.sendBeacon(
+      import.meta.env.VITE_FIREBASE_FALLBACK_URL,
+      JSON.stringify({
+        activeSession: runtimeStore.activeSession,
+        dailyStatsDelta: runtimeStore.dailyStatsDelta,
+        wrongDailyDelta: runtimeStore.wrongDailyDelta,
+      })
+    )
+    runtimeStore.reset()
+  }
   console.log('[router] beforeEach hit')
   const userStore = useUserStore()
-  beaconFlush()
   // 1️⃣ 404 直接放行
   if (to.matched.some((record) => record.meta.is404)) {
     return next()

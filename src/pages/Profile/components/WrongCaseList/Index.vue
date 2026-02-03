@@ -32,10 +32,7 @@
     ],
   } as const
 
-  const selectedSubModes = ref<Record<string, boolean>>({
-    cash: true,
-    tournament: true,
-  })
+  const selectedSubModes = ref<Record<string, boolean>>({})
 
   /* ================= 分页 ================= */
   const page = ref(1)
