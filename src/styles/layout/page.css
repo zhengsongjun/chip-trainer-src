@@ -3,3 +3,11 @@
   border-radius: var(--radius-md);
   padding: var(--space-6);
 }
+
+/* 移动端：减少 padding */
+@media (max-width: 1024px) {
+  .ui-page {
+    padding: var(--space-3); /* 从 32px 减少到 16px */
+    border-radius: 0; /* 移动端取消圆角，更贴合边缘 */
+  }
+}

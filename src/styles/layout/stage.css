@@ -1,5 +1,12 @@
 .ui-stage {
-  max-width: min(1400px, 92vw);
+  max-width: min(1400px, 98vw); /* 增加到 98vw，减少左右边距 */
   margin: 0 auto;
   padding: 0; /* 注意：不再承担视觉底板 */
+}
+
+/* 移动端：占满全宽 */
+@media (max-width: 1024px) {
+  .ui-stage {
+    max-width: 100vw; /* 移动端占满全宽 */
+  }
 }

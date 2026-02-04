@@ -5,7 +5,25 @@
       "Bash(dir:*)",
       "Bash(npm run type-check:*)",
       "Bash(npm run:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(curl:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd.exe /c:*)",
+      "Bash(firebase deploy:*)",
+      "Bash(tree:*)",
+      "Bash(timeout:*)",
+      "Bash(Get-Content \"E:\\\\TMP\\\\claude\\\\E--ChipTrainer-chip-trainer\\\\tasks\\\\b19f142.output\")",
+      "Bash(node test-drawmaha.mjs:*)",
+      "Bash(node:*)",
+      "Bash(pkill:*)",
+      "Bash(powershell:*)",
+      "Bash(yarn vue-tsc:*)",
+      "Bash(yarn build:*)",
+      "Bash(npm install:*)",
+      "Bash(npx vue-tsc:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

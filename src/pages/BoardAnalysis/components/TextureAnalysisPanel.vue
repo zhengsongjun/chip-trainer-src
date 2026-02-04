@@ -42,6 +42,22 @@
   const panelRef = ref<HTMLElement | null>(null)
   const isCollapsed = ref(true)
 
+  // 检测是否为移动端
+  const isMobile = ref(false)
+
+  function checkIsMobile() {
+    isMobile.value = window.matchMedia('(max-width: 1024px)').matches
+  }
+
+  onMounted(() => {
+    checkIsMobile()
+    window.addEventListener('resize', checkIsMobile)
+  })
+
+  onBeforeUnmount(() => {
+    window.removeEventListener('resize', checkIsMobile)
+  })
+
   const state = reactive({
     // 用户选择
     hasPair: null as null | boolean,
@@ -73,7 +89,7 @@
   })
 
   /* ===============================
-   拖拽（fixed + viewport）
+   拖拽（fixed + viewport）- 仅桌面端
   =============================== */
 
   let offsetX = 0
@@ -81,6 +97,8 @@
   let dragging = false
 
   function onDragStart(e: MouseEvent) {
+    // 移动端禁用拖拽
+    if (isMobile.value) return
     if (!panelRef.value) return
     const rect = panelRef.value.getBoundingClientRect()
     offsetX = e.clientX - rect.left
@@ -108,10 +126,16 @@
   })
 
   /* ===============================
-   初始定位（父级右上）
+   初始定位（父级右上）- 仅桌面端
   =============================== */
 
   onMounted(async () => {
+    checkIsMobile()
+    window.addEventListener('resize', checkIsMobile)
+
+    // 移动端不需要定位
+    if (isMobile.value) return
+
     await nextTick()
     if (!panelRef.value) return
 
@@ -214,7 +238,142 @@
 </script>
 
 <template>
-  <div class="texture-panel chip-stage" :class="{ collapsed: isCollapsed, disabled: !isEnabled }" ref="panelRef">
+  <!-- 移动端：底部抽屉 + 遮罩 -->
+  <div v-if="isMobile" class="mobile-texture-wrapper">
+    <!-- 遮罩层 -->
+    <div
+      v-show="!isCollapsed"
+      class="mobile-overlay"
+      @click="isCollapsed = true"
+    ></div>
+
+    <!-- 底部抽屉 -->
+    <div class="mobile-drawer" :class="{ 'drawer-open': !isCollapsed, disabled: !isEnabled }">
+      <!-- 拖动手柄 -->
+      <div class="drawer-handle" @click="isCollapsed = !isCollapsed">
+        <div class="handle-bar"></div>
+        <span class="drawer-title">{{ textureAnalysis }}</span>
+      </div>
+
+      <!-- 抽屉内容 -->
+      <div v-show="!isCollapsed" class="drawer-content">
+        <!-- 禁用提示 -->
+        <div v-if="!isEnabled" class="disabled-hint">
+          Texture analysis is only available for Hold'em, Omaha, and Big O
+        </div>
+
+        <!-- 基础判断 -->
+        <div
+          v-else
+          class="row"
+          v-for="item in [
+            { key: 'pair', label: pair, model: 'hasPair', result: 'pairResult' },
+            { key: 'flush', label: flush, model: 'hasFlush', result: 'flushResult' },
+            {
+              key: 'straight',
+              label: straightPotential,
+              model: 'hasStraight',
+              result: 'straightResult',
+            },
+          ]"
+          :key="item.key"
+        >
+          <span class="row-label">{{ item.label }}</span>
+
+          <el-radio-group v-model="state[item.model]" class="row-radio">
+            <el-radio :label="true">{{ yes }}</el-radio>
+            <el-radio :label="false">{{ no }}</el-radio>
+          </el-radio-group>
+
+          <span
+            class="row-result"
+            :class="{
+              ok: state[item.result] === true,
+              bad: state[item.result] === false,
+              empty: state[item.result] === null,
+            }"
+          >
+            {{ state[item.result] === true ? '✔' : state[item.result] === false ? '✖' : '' }}
+          </span>
+        </div>
+
+        <!-- 同花顺 -->
+        <div v-if="isEnabled && state.hasFlush && state.hasStraight" class="row">
+          <span class="row-label">{{ straightFlushPotential }}</span>
+
+          <el-radio-group v-model="state.hasStraightFlush" class="row-radio">
+            <el-radio :label="true">{{ yes }}</el-radio>
+            <el-radio :label="false">{{ no }}</el-radio>
+          </el-radio-group>
+
+          <span
+            class="row-result"
+            :class="{
+              ok: state.straightFlushResult === true,
+              bad: state.straightFlushResult === false,
+              empty: state.straightFlushResult === null,
+            }"
+          >
+            {{
+              state.straightFlushResult === true
+                ? '✔'
+                : state.straightFlushResult === false
+                  ? '✖'
+                  : ''
+            }}
+          </span>
+        </div>
+
+        <!-- 顺子缺张 -->
+        <div v-if="isEnabled && state.hasStraight" class="row vertical">
+          <el-input
+            v-model="state.straightMissingInput"
+            type="textarea"
+            :placeholder="straightGutshotExample"
+          />
+          <div
+            v-if="state.straightMissingResult"
+            class="hint"
+            :class="state.straightMissingResult.ok ? 'ok' : 'bad'"
+          >
+            {{ state.straightMissingResult.message }}
+          </div>
+        </div>
+
+        <!-- 同花顺缺张 -->
+        <div
+          v-if="isEnabled && state.hasFlush && state.hasStraight && state.hasStraightFlush"
+          class="row vertical"
+        >
+          <el-input
+            v-model="state.straightFlushMissingInput"
+            type="textarea"
+            :placeholder="straightFlushGutshotExample"
+          />
+          <div
+            v-if="state.straightFlushMissingResult"
+            class="hint"
+            :class="state.straightFlushMissingResult.ok ? 'ok' : 'bad'"
+          >
+            {{ state.straightFlushMissingResult.message }}
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="drawer-footer">
+          <el-button size="small" type="primary" @click="validateAll" :disabled="!isEnabled">
+            {{ verify }}
+          </el-button>
+          <el-button size="small" @click="resetAll" :disabled="!isEnabled">
+            {{ reset }}
+          </el-button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 桌面端：原有浮动面板 -->
+  <div v-else class="texture-panel chip-stage" :class="{ collapsed: isCollapsed, disabled: !isEnabled }" ref="panelRef">
     <!-- Header -->
     <header class="panel-header" @mousedown="onDragStart">
       <span class="panel-title">{{ textureAnalysis }}</span>
@@ -343,6 +502,116 @@
 </template>
 
 <style lang="css" scoped>
+  /* ===============================
+   移动端底部抽屉
+  =============================== */
+
+  .mobile-texture-wrapper {
+    display: contents;
+  }
+
+  /* 遮罩层 */
+  .mobile-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999; /* 在抽屉下方 */
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* 底部抽屉 */
+  .mobile-drawer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #fff;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+    z-index: 10000; /* 降低 z-index，不遮挡侧边栏按钮 */
+    max-height: 70vh;
+    /* 默认显示手柄（手柄高度约 68px），并向右偏移留出左侧空间 */
+    transform: translateY(calc(100% - 68px));
+    transition: transform 0.3s ease, left 0.3s ease;
+    /* 左侧留出 70px 给侧边栏按钮 */
+    left: 70px;
+  }
+
+  .mobile-drawer.drawer-open {
+    transform: translateY(0);
+    left: 0; /* 展开时占满全宽 */
+  }
+
+  /* 拖动手柄 */
+  .drawer-handle {
+    padding: 12px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+    background: #fff;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .handle-bar {
+    width: 36px;
+    height: 4px;
+    background: #d1d5db;
+    border-radius: 2px;
+  }
+
+  .drawer-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  /* 抽屉内容 */
+  .drawer-content {
+    padding: 0 20px 24px;
+    max-height: calc(70vh - 68px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 禁用状态 - 手柄依然可用 */
+  .mobile-drawer.disabled .drawer-handle {
+    pointer-events: auto;
+    cursor: pointer;
+  }
+
+  .mobile-drawer.disabled .drawer-content {
+    pointer-events: none;
+  }
+
+  .drawer-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  /* ===============================
+   桌面端浮动面板
+  =============================== */
+
   .texture-panel {
     position: fixed;
     z-index: 100000;
@@ -382,6 +651,7 @@
     font-size: 18px;
     opacity: 0.6;
     cursor: pointer;
+    pointer-events: auto; /* 始终可点击 */
   }
 
   .collapse-toggle:hover {
@@ -397,11 +667,18 @@
 
   .texture-panel.disabled {
     opacity: 0.6;
+  }
+
+  /* 禁用时，body 和 footer 不可交互 */
+  .texture-panel.disabled .panel-body,
+  .texture-panel.disabled .panel-footer {
     pointer-events: none;
   }
 
+  /* 但 header 仍然可以拖拽 */
   .texture-panel.disabled .panel-header {
-    cursor: not-allowed;
+    cursor: move; /* 保持可拖拽 */
+    pointer-events: auto; /* 允许交互 */
   }
 
   .disabled-hint {

@@ -12,20 +12,14 @@ service cloud.firestore {
       allow delete: if request.auth != null && request.auth.uid == userId;
     }
 
-    // 用户数据
+    // 其他现有规则...
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // 激活码
     match /activationCodes/{codeId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-
-    // 其他集合的默认规则（开发环境，生产环境应该更严格）
-    match /{document=**} {
-      allow read, write: if request.auth != null;
     }
   }
 }
