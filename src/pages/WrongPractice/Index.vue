@@ -13,7 +13,7 @@
   const userStore = useUserStore()
   const userId = computed(() => userStore.profile?.uid ?? '')
   const wrongPracticeStore = useWrongPracticeStore()
-
+  import { getModeLabel } from '@/utils/countString'
   /**
    * 页面进入时：从 localStorage 恢复
    */
@@ -101,6 +101,7 @@
     <!-- {{ currentItem?.payload?.correctValue }} -->
     <div class="practice-body">
       <!-- 中间练习区 -->
+      {{ currentItem.payload.correctValue }}
       <main class="practice-stage">
         <template v-if="currentItem?.mode === 'chip'">
           <ChipBoardPractice :groups="currentItem?.payload?.chipGroups" @confirm="onSubmitAnswer" />
@@ -128,7 +129,11 @@
       </main>
     </div>
     <!-- 右侧纵向进度条 -->
-    <VerticalProgress :current="current" :total="total" />
+    <VerticalProgress
+      :current="current"
+      :total="total"
+      :modeLabel="getModeLabel(currentItem?.mode) + ' / ' + getModeLabel(currentItem?.subMode)"
+    />
   </div>
 </template>
 
