@@ -49,6 +49,15 @@ export const flushFallback = onRequest(async (req, res) => {
       res.status(204).end()
       return
     }
+    // 🛡 后端保险：没有任何答题记录，直接放弃
+    if (!Array.isArray(activeSession.answers) || activeSession.answers.length === 0) {
+      logger.info('[flushFallback] skip empty session', {
+        sessionId: activeSession?.summary?.sessionId,
+        userId: activeSession?.summary?.userId,
+      })
+      res.status(204).end()
+      return
+    }
 
     const sessionId = activeSession.summary.sessionId
     const userId = activeSession.summary.userId
