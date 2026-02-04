@@ -53,8 +53,6 @@
 
   const userStore = useUserStore()
 
-  const userStore = useUserStore()
-
   const showFireworks = ref(false)
   const playerCount = ref<number>(2)
   const gameMode = ref<'holdem' | 'omaha' | 'bigo' | '7stud' | 'razz' | 'razzdugi' | 'razzdeucey' | '5card-draw' | 'badugi' | 'lowball-a5' | 'lowball-27' | 'ari' | 'archie' | 'badacey' | 'badeucey' | 'drawmaha' | 'drawmaha-49' | 'drawmaha-zero' | 'drawmaha-27' | 'double-board-omaha' | 'double-board-bigo' | 'double-board-holdem'>('omaha')
@@ -1468,7 +1466,6 @@
       return
     }
 
-<<<<<<< HEAD
     const answerTimeMs = Date.now() - questionStartAt.value
     function recordWrong(correctValue: { high?: number[]; low?: number[] }) {
       if (hasRecordedWrong.value) return
@@ -1495,8 +1492,7 @@
 
       hasRecordedWrong.value = true
     }
-=======
->>>>>>> ef89a984bc3119c37e133a98f6281a7c6ec67273
+
     // Razz 模式只需要选择 Low
     if (gameMode.value === 'razz') {
       if (selectedLowSeats.value.length === 0) {
@@ -1578,7 +1574,6 @@
         lowWinnerSeats.every((seat, i) => seat === selectedLowSeats.value[i])
 
       if (!badugiCorrect || !lowCorrect) {
-<<<<<<< HEAD
         recordWrong({ low: lowWinnerSeats })
         const lowWinnerDetails = lowWinnerSeats
           .map((seat) => {
@@ -1586,8 +1581,7 @@
             return `Player ${seat}: ${player?.lowHand.cards.join(' ')}`
           })
           .join('\n')
-=======
->>>>>>> ef89a984bc3119c37e133a98f6281a7c6ec67273
+
         resultMessage.value =
           `Wrong ❌\n\n` +
           `Badugi winner(s): ${badugiWinnerSeats.join(', ')}\n` +
@@ -2050,7 +2044,6 @@
         showResult.value = true
         return
       }
-<<<<<<< HEAD
       answerQuestion({
         isCorrect: true,
         answerTimeMs,
@@ -2072,9 +2065,7 @@
         mode: 'board-analysis',
         subMode: gameMode.value,
       })
-=======
 
->>>>>>> ef89a984bc3119c37e133a98f6281a7c6ec67273
       ElMessage.success('Correct! 🎉')
       showFireworks.value = true
       setTimeout(dealNewHand, 1200)
@@ -2808,14 +2799,6 @@
 
     // 加载布局配置
     await loadLayoutConfig()
-<<<<<<< HEAD
-=======
-  })
-
-  // 清理监听器
-  onUnmounted(() => {
-    window.removeEventListener('resize', calculateBoardScale)
->>>>>>> ef89a984bc3119c37e133a98f6281a7c6ec67273
   })
 
   // 清理监听器
