@@ -53,6 +53,8 @@
 
   const userStore = useUserStore()
 
+  const userStore = useUserStore()
+
   const showFireworks = ref(false)
   const playerCount = ref<number>(2)
   const gameMode = ref<'holdem' | 'omaha' | 'bigo' | '7stud' | 'razz' | 'razzdugi' | 'razzdeucey' | '5card-draw' | 'badugi' | 'lowball-a5' | 'lowball-27' | 'ari' | 'archie' | 'badacey' | 'badeucey' | 'drawmaha' | 'drawmaha-49' | 'drawmaha-zero' | 'drawmaha-27' | 'double-board-omaha' | 'double-board-bigo' | 'double-board-holdem'>('omaha')
@@ -1466,6 +1468,7 @@
       return
     }
 
+<<<<<<< HEAD
     const answerTimeMs = Date.now() - questionStartAt.value
     function recordWrong(correctValue: { high?: number[]; low?: number[] }) {
       if (hasRecordedWrong.value) return
@@ -1492,6 +1495,8 @@
 
       hasRecordedWrong.value = true
     }
+=======
+>>>>>>> ef89a984bc3119c37e133a98f6281a7c6ec67273
     // Razz 模式只需要选择 Low
     if (gameMode.value === 'razz') {
       if (selectedLowSeats.value.length === 0) {
@@ -1573,6 +1578,7 @@
         lowWinnerSeats.every((seat, i) => seat === selectedLowSeats.value[i])
 
       if (!badugiCorrect || !lowCorrect) {
+<<<<<<< HEAD
         recordWrong({ low: lowWinnerSeats })
         const lowWinnerDetails = lowWinnerSeats
           .map((seat) => {
@@ -1580,6 +1586,8 @@
             return `Player ${seat}: ${player?.lowHand.cards.join(' ')}`
           })
           .join('\n')
+=======
+>>>>>>> ef89a984bc3119c37e133a98f6281a7c6ec67273
         resultMessage.value =
           `Wrong ❌\n\n` +
           `Badugi winner(s): ${badugiWinnerSeats.join(', ')}\n` +
@@ -2042,6 +2050,7 @@
         showResult.value = true
         return
       }
+<<<<<<< HEAD
       answerQuestion({
         isCorrect: true,
         answerTimeMs,
@@ -2063,6 +2072,9 @@
         mode: 'board-analysis',
         subMode: gameMode.value,
       })
+=======
+
+>>>>>>> ef89a984bc3119c37e133a98f6281a7c6ec67273
       ElMessage.success('Correct! 🎉')
       showFireworks.value = true
       setTimeout(dealNewHand, 1200)
@@ -2126,6 +2138,228 @@
         mode: 'board-analysis',
         subMode: gameMode.value,
       })
+      ElMessage.success('Correct! 🎉')
+      showFireworks.value = true
+      setTimeout(dealNewHand, 1200)
+      return
+    }
+
+    // Double Board Omaha/Big O Top/Bottom 模式：Top 和 Bottom 两个板子
+    if ((gameMode.value === 'double-board-omaha' || gameMode.value === 'double-board-bigo') && gameType.value === 'double-board-high') {
+      if (selectedHighSeats.value.length === 0 && selectedLowSeats.value.length === 0) {
+        ElMessage.warning('Please select the winning player(s) first')
+        return
+      }
+
+      // 计算 Top 赢家（上方公共牌）
+      const topResult = readOmahaHandHigh(boardCards.value, playerHands.value)
+      const topWinnerSeats = topResult.seats
+      const topWinnerDetails = topWinnerSeats.length > 0
+        ? topWinnerSeats.map((seat, i) => `Player ${seat}: ${topResult.hands[i]?.descr || ''}`).join('\n')
+        : ''
+
+      // 计算 Bottom 赢家（下方公共牌）
+      const bottomResult = readOmahaHandHigh(boardCardsBottom.value, playerHands.value)
+      const bottomWinnerSeats = bottomResult.seats
+      const bottomWinnerDetails = bottomWinnerSeats.length > 0
+        ? bottomWinnerSeats.map((seat, i) => `Player ${seat}: ${bottomResult.hands[i]?.descr || ''}`).join('\n')
+        : ''
+
+      // 检查 Top 答案（使用 High 位置）
+      const topCorrect =
+        topWinnerSeats.length === selectedHighSeats.value.length &&
+        topWinnerSeats.every((seat, i) => seat === selectedHighSeats.value[i])
+
+      // 检查 Bottom 答案（使用 Low 位置）
+      const bottomCorrect =
+        bottomWinnerSeats.length === selectedLowSeats.value.length &&
+        bottomWinnerSeats.every((seat, i) => seat === selectedLowSeats.value[i])
+
+      if (!topCorrect || !bottomCorrect) {
+        resultMessage.value =
+          `Wrong ❌\n\n` +
+          `Top winner(s): ${topWinnerSeats.length > 0 ? topWinnerSeats.join(', ') : 'None'}\n` +
+          `${topWinnerDetails}\n\n` +
+          `Bottom winner(s): ${bottomWinnerSeats.length > 0 ? bottomWinnerSeats.join(', ') : 'None'}\n` +
+          `${bottomWinnerDetails}\n\n` +
+          `Your Top answer: ${selectedHighSeats.value.join(', ') || 'None'}\n` +
+          `Your Bottom answer: ${selectedLowSeats.value.join(', ') || 'None'}`
+        showResult.value = true
+        return
+      }
+
+      ElMessage.success('Correct! 🎉')
+      showFireworks.value = true
+      setTimeout(dealNewHand, 1200)
+      return
+    }
+
+    // Double Board Hold'em Top/Bottom 模式：Top 和 Bottom 两个板子
+    if (gameMode.value === 'double-board-holdem') {
+      if (selectedHighSeats.value.length === 0 && selectedLowSeats.value.length === 0) {
+        ElMessage.warning('Please select the winning player(s) first')
+        return
+      }
+
+      // 计算 Top 赢家（上方公共牌）- 使用 Hold'em 规则
+      const topResult = readHoldemHandHigh(boardCards.value, playerHands.value)
+      const topWinnerSeats = topResult.seats
+      const topWinnerDetails = topWinnerSeats.length > 0
+        ? topWinnerSeats.map((seat, i) => `Player ${seat}: ${topResult.hands[i]?.descr || ''}`).join('\n')
+        : ''
+
+      // 计算 Bottom 赢家（下方公共牌）- 使用 Hold'em 规则
+      const bottomResult = readHoldemHandHigh(boardCardsBottom.value, playerHands.value)
+      const bottomWinnerSeats = bottomResult.seats
+      const bottomWinnerDetails = bottomWinnerSeats.length > 0
+        ? bottomWinnerSeats.map((seat, i) => `Player ${seat}: ${bottomResult.hands[i]?.descr || ''}`).join('\n')
+        : ''
+
+      // 检查 Top 答案（使用 High 位置）
+      const topCorrect =
+        topWinnerSeats.length === selectedHighSeats.value.length &&
+        topWinnerSeats.every((seat, i) => seat === selectedHighSeats.value[i])
+
+      // 检查 Bottom 答案（使用 Low 位置）
+      const bottomCorrect =
+        bottomWinnerSeats.length === selectedLowSeats.value.length &&
+        bottomWinnerSeats.every((seat, i) => seat === selectedLowSeats.value[i])
+
+      if (!topCorrect || !bottomCorrect) {
+        resultMessage.value =
+          `Wrong ❌\n\n` +
+          `Top winner(s): ${topWinnerSeats.length > 0 ? topWinnerSeats.join(', ') : 'None'}\n` +
+          `${topWinnerDetails}\n\n` +
+          `Bottom winner(s): ${bottomWinnerSeats.length > 0 ? bottomWinnerSeats.join(', ') : 'None'}\n` +
+          `${bottomWinnerDetails}\n\n` +
+          `Your Top answer: ${selectedHighSeats.value.join(', ') || 'None'}\n` +
+          `Your Bottom answer: ${selectedLowSeats.value.join(', ') || 'None'}`
+        showResult.value = true
+        return
+      }
+
+      ElMessage.success('Correct! 🎉')
+      showFireworks.value = true
+      setTimeout(dealNewHand, 1200)
+      return
+    }
+
+    // Double Board Omaha/Big O Best/Best 模式：High 和 Low
+    if ((gameMode.value === 'double-board-omaha' || gameMode.value === 'double-board-bigo') && gameType.value === 'double-board-bestbest') {
+      if (selectedHighSeats.value.length === 0 && selectedLowSeats.value.length === 0) {
+        ElMessage.warning('Please select the winning player(s) first')
+        return
+      }
+
+      // 计算两个板子的 High
+      const topHighResult = readOmahaHandHigh(boardCards.value, playerHands.value)
+      const bottomHighResult = readOmahaHandHigh(boardCardsBottom.value, playerHands.value)
+
+      // 比较两个板子的最好 High，选出更好的那个
+      let highWinnerSeats: number[] = []
+      let highWinnerDetails = ''
+
+      if (topHighResult.seats.length > 0 && bottomHighResult.seats.length > 0) {
+        // 比较两个板子的最好手牌
+        const topBestHand = topHighResult.hands[0]
+        const bottomBestHand = bottomHighResult.hands[0]
+        const winners = Hand.winners([topBestHand, bottomBestHand])
+
+        if (winners.includes(topBestHand) && winners.includes(bottomBestHand)) {
+          // 平局，两个板子的赢家都算
+          highWinnerSeats = [...new Set([...topHighResult.seats, ...bottomHighResult.seats])].sort((a, b) => a - b)
+          highWinnerDetails = `Top: ${topHighResult.seats.map((seat, i) => `Player ${seat}: ${topHighResult.hands[i]?.descr || ''}`).join(', ')}\n` +
+            `Bottom: ${bottomHighResult.seats.map((seat, i) => `Player ${seat}: ${bottomHighResult.hands[i]?.descr || ''}`).join(', ')}`
+        } else if (winners.includes(topBestHand)) {
+          highWinnerSeats = topHighResult.seats
+          highWinnerDetails = topHighResult.seats.map((seat, i) => `Player ${seat}: ${topHighResult.hands[i]?.descr || ''} (Top)`).join('\n')
+        } else {
+          highWinnerSeats = bottomHighResult.seats
+          highWinnerDetails = bottomHighResult.seats.map((seat, i) => `Player ${seat}: ${bottomHighResult.hands[i]?.descr || ''} (Bottom)`).join('\n')
+        }
+      } else if (topHighResult.seats.length > 0) {
+        highWinnerSeats = topHighResult.seats
+        highWinnerDetails = topHighResult.seats.map((seat, i) => `Player ${seat}: ${topHighResult.hands[i]?.descr || ''} (Top)`).join('\n')
+      } else if (bottomHighResult.seats.length > 0) {
+        highWinnerSeats = bottomHighResult.seats
+        highWinnerDetails = bottomHighResult.seats.map((seat, i) => `Player ${seat}: ${bottomHighResult.hands[i]?.descr || ''} (Bottom)`).join('\n')
+      }
+
+      // 计算两个板子的 Low (8 or better)
+      const topLowResult = readOmahaHandLowA5(boardCards.value, playerHands.value)
+      const bottomLowResult = readOmahaHandLowA5(boardCardsBottom.value, playerHands.value)
+
+      // 比较两个板子的最好 Low，选出更好的那个
+      let lowWinnerSeats: number[] = []
+      let lowWinnerDetails = ''
+
+      if (topLowResult.seats.length > 0 && bottomLowResult.seats.length > 0) {
+        // 比较两个板子的最好 Low 牌（从大到小比较，越小越好）
+        const rankValues: Record<string, number> = {
+          A: 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8,
+          '9': 9, T: 10, J: 11, Q: 12, K: 13,
+        }
+
+        const topLowCards = topLowResult.hands[0]?.cards || []
+        const bottomLowCards = bottomLowResult.hands[0]?.cards || []
+
+        const topValues = topLowCards.map((c: string) => rankValues[c[0]]).sort((a: number, b: number) => b - a)
+        const bottomValues = bottomLowCards.map((c: string) => rankValues[c[0]]).sort((a: number, b: number) => b - a)
+
+        let comparison = 0
+        for (let i = 0; i < 5; i++) {
+          if (topValues[i] < bottomValues[i]) {
+            comparison = -1
+            break
+          }
+          if (topValues[i] > bottomValues[i]) {
+            comparison = 1
+            break
+          }
+        }
+
+        if (comparison === 0) {
+          // 平局
+          lowWinnerSeats = [...new Set([...topLowResult.seats, ...bottomLowResult.seats])].sort((a, b) => a - b)
+          lowWinnerDetails = `Top: ${topLowResult.descr}\nBottom: ${bottomLowResult.descr}`
+        } else if (comparison < 0) {
+          lowWinnerSeats = topLowResult.seats
+          lowWinnerDetails = topLowResult.seats.map((seat) => `Player ${seat}: ${topLowResult.descr} (Top)`).join('\n')
+        } else {
+          lowWinnerSeats = bottomLowResult.seats
+          lowWinnerDetails = bottomLowResult.seats.map((seat) => `Player ${seat}: ${bottomLowResult.descr} (Bottom)`).join('\n')
+        }
+      } else if (topLowResult.seats.length > 0) {
+        lowWinnerSeats = topLowResult.seats
+        lowWinnerDetails = topLowResult.seats.map((seat) => `Player ${seat}: ${topLowResult.descr} (Top)`).join('\n')
+      } else if (bottomLowResult.seats.length > 0) {
+        lowWinnerSeats = bottomLowResult.seats
+        lowWinnerDetails = bottomLowResult.seats.map((seat) => `Player ${seat}: ${bottomLowResult.descr} (Bottom)`).join('\n')
+      }
+
+      // 检查 High 答案
+      const highCorrect =
+        highWinnerSeats.length === selectedHighSeats.value.length &&
+        highWinnerSeats.every((seat, i) => seat === selectedHighSeats.value[i])
+
+      // 检查 Low 答案
+      const lowCorrect =
+        lowWinnerSeats.length === selectedLowSeats.value.length &&
+        lowWinnerSeats.every((seat, i) => seat === selectedLowSeats.value[i])
+
+      if (!highCorrect || !lowCorrect) {
+        resultMessage.value =
+          `Wrong ❌\n\n` +
+          `High winner(s): ${highWinnerSeats.length > 0 ? highWinnerSeats.join(', ') : 'None'}\n` +
+          `${highWinnerDetails}\n\n` +
+          `Low winner(s): ${lowWinnerSeats.length > 0 ? lowWinnerSeats.join(', ') : 'No qualifying low'}\n` +
+          `${lowWinnerDetails}\n\n` +
+          `Your High answer: ${selectedHighSeats.value.join(', ') || 'None'}\n` +
+          `Your Low answer: ${selectedLowSeats.value.join(', ') || 'None'}`
+        showResult.value = true
+        return
+      }
+
       ElMessage.success('Correct! 🎉')
       showFireworks.value = true
       setTimeout(dealNewHand, 1200)
@@ -2574,6 +2808,14 @@
 
     // 加载布局配置
     await loadLayoutConfig()
+<<<<<<< HEAD
+=======
+  })
+
+  // 清理监听器
+  onUnmounted(() => {
+    window.removeEventListener('resize', calculateBoardScale)
+>>>>>>> ef89a984bc3119c37e133a98f6281a7c6ec67273
   })
 
   // 清理监听器
@@ -2817,26 +3059,6 @@
                   :style="{ left: `${i * 18}px`, zIndex: i }"
                 >
                   <CardBack />
-                </div>
-                <!-- Stud Cards (7 Card Stud / Razz) -->
-                <div
-                  v-if="(gameMode === '7stud' || gameMode === 'razz') && playerStudCards[seat]"
-                  class="stud-cards-container"
-                  :style="getStudCardContainerStyle(seat)"
-                >
-                  <div
-                    v-for="(card, i) in playerStudCards[seat]"
-                    :key="`stud-${i}`"
-                    class="stud-card dim-card"
-                    :style="{
-                      top: `${getStudCardOffset(seat, i).top}px`,
-                      left: `${getStudCardOffset(seat, i).left}px`,
-                      transform: `rotate(${getStudCardRotation(seat)}deg)`,
-                      zIndex: 100 + i,
-                    }"
-                  >
-                    <CardBack />
-                  </div>
                 </div>
               </template>
 
