@@ -37,6 +37,16 @@ export const useTrainingRuntimeStore = defineStore('trainingRuntime', {
     wrongDailyDelta: null as WrongDailyDelta | null,
     status: 'idle' as 'idle' | 'running' | 'flushing',
   }),
+  // stores/trainingRuntime.ts
+  getters: {
+    hasMeaningfulSession(state) {
+      return !!(
+        state.activeSession &&
+        state.activeSession.answers &&
+        state.activeSession.answers.length > 0
+      )
+    },
+  },
 
   actions: {
     /* ========================

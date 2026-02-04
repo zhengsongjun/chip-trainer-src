@@ -1,9 +1,10 @@
 <script setup lang="ts">
   import { computed } from 'vue'
-
+  import FloatingModePanel from './FloatingModePanel.vue'
   const props = defineProps<{
     current: number
     total: number
+    modeLabel: string
   }>()
 
   const percent = computed(() => {
@@ -13,30 +14,44 @@
 </script>
 
 <template>
-  <div class="vertical-progress">
-    <!-- 数值 -->
-    <div class="progress-value">
-      <div class="current">{{ current }}</div>
-      <div class="slash">/</div>
-      <div class="total">{{ total }}</div>
-    </div>
+  <div class="floating-hud">
+    <FloatingModePanel :modeLabel="modeLabel" />
 
-    <!-- 轨道 -->
-    <div class="progress-track">
-      <div class="progress-fill" :style="{ height: percent + '%' }" />
-    </div>
+    <div class="vertical-progress">
+      <!-- 数值 -->
+      <div class="progress-value">
+        <div class="current">{{ current }}</div>
+        <div class="slash">/</div>
+        <div class="total">{{ total }}</div>
+      </div>
 
-    <!-- 提示 -->
-    <div class="progress-tip">已完成 {{ current }} 题</div>
+      <!-- 轨道 -->
+      <div class="progress-track">
+        <div class="progress-fill" :style="{ height: percent + '%' }" />
+      </div>
+
+      <!-- 提示 -->
+      <div class="progress-tip">已完成 {{ current }} 题</div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-  .vertical-progress {
+  .floating-hud {
     position: fixed;
     right: 28px;
     top: 50%;
     transform: translateY(-50%);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+
+    z-index: 20;
+  }
+
+  .vertical-progress {
     width: 64px;
     padding: 14px 10px 16px;
 
@@ -50,8 +65,6 @@
     flex-direction: column;
     align-items: center;
     gap: 12px;
-
-    z-index: 20;
   }
 
   /* 数字 */

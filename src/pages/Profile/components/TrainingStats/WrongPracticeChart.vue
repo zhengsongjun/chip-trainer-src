@@ -77,7 +77,7 @@
 
     return {
       title: {
-        text: '错题练习分析',
+        text: '错题练习统计',
         left: 'center',
       },
       tooltip: {

@@ -22,7 +22,7 @@ app.use(router)
 app.mount('#app')
 const runtimeStore = useTrainingRuntimeStore(pinia)
 window.addEventListener('beforeunload', () => {
-  if (runtimeStore.activeSession) {
+  if (runtimeStore.hasMeaningfulSession) {
     navigator.sendBeacon(
       import.meta.env.VITE_FIREBASE_FALLBACK_URL,
       JSON.stringify({
@@ -31,6 +31,7 @@ window.addEventListener('beforeunload', () => {
         wrongDailyDelta: runtimeStore.wrongDailyDelta,
       })
     )
-    runtimeStore.reset()
   }
+
+  runtimeStore.reset()
 })

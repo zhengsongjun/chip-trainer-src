@@ -82,7 +82,8 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const runtimeStore = useTrainingRuntimeStore()
-  if (runtimeStore.activeSession) {
+
+  if (runtimeStore.hasMeaningfulSession) {
     navigator.sendBeacon(
       import.meta.env.VITE_FIREBASE_FALLBACK_URL,
       JSON.stringify({
@@ -91,7 +92,6 @@ router.beforeEach((to, from, next) => {
         wrongDailyDelta: runtimeStore.wrongDailyDelta,
       })
     )
-    runtimeStore.reset()
   }
   console.log('[router] beforeEach hit')
   const userStore = useUserStore()
