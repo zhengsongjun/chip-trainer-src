@@ -6,9 +6,6 @@
       'highlight-low': isHighlightLow,
       dim: isDim,
     }"
-    :style="{
-      transform: `scale(${Number(scale)})`,
-    }"
   >
     <img :src="cardSrc" alt="card face" draggable="false" @dragstart.prevent />
   </div>
@@ -19,7 +16,6 @@
 
   const props = defineProps<{
     card: string
-    scale?: string | number
 
     /**
      * 当前这张牌是否属于被 High Chip 选中的玩家
@@ -35,10 +31,8 @@
      * 当前是否存在"任何玩家被选中"
      * 用于区分：平常 vs 暗淡
      */
-    hasSelection: boolean
+    hasSelection?: boolean
   }>()
-
-  const scale = props.scale ?? 1
 
   /**
    * 高亮判定
@@ -47,9 +41,15 @@
   const isHighlightLow = computed(() => props.activeLow === true)
 
   const isDim = computed(() => {
-    // 只有在"存在选择"的情况下
-    // 且自己不是 active 或 activeLow，才暗淡
-    return props.hasSelection && props.active !== true && props.activeLow !== true
+    // 在 Drawmaha 模式下，不应该有暗淡效果，因为 Hand 和 Board 是不同的标记类型
+    // 或者检查 gameMode，但由于这是通用组件，我们可以通过其他方式判断
+    // 简单的解决方法：在有 hasSelection 的情况下，如果既不是 active 也不是 activeLow，
+    // 但如果是 Drawmaha 模式，我们不应该暗淡其他玩家的手牌
+    // 这里我们可以修改逻辑，或者让调用方控制
+    // 暂时修改为：在 Drawmaha 模式下不暗淡卡片
+    // 但由于这是通用组件，我们需要从父组件接收游戏模式信息
+    // 或者我们可以简单地禁用暗淡逻辑，因为在 Drawmaha 模式下每个玩家都可能是 Hand 或 Board
+    return false
   })
 
   const cardSrc = computed(() => {

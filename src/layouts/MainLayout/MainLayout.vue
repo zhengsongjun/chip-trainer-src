@@ -98,6 +98,9 @@
     return route.meta.layout !== 'simple' && hasValidService.value
   })
 
+  // 移动端侧边栏折叠状态
+  const isSidebarCollapsed = ref(false)
+
   /* ================= auth ================= */
   async function handleLogout() {
     userStore.reset()
@@ -212,7 +215,18 @@
 
       <!-- ================= Main ================= -->
       <div class="ui-main">
-        <aside v-if="showSidebar" class="ui-sidebar">
+        <!-- 移动端侧边栏折叠按钮 -->
+        <button
+          v-if="showSidebar"
+          class="mobile-sidebar-toggle"
+          @click="isSidebarCollapsed = !isSidebarCollapsed"
+          :title="isSidebarCollapsed ? '展开侧边栏' : '折叠侧边栏'"
+        >
+          <span v-if="isSidebarCollapsed">▶</span>
+          <span v-else>◀</span>
+        </button>
+
+        <aside v-if="showSidebar" class="ui-sidebar" :class="{ 'sidebar-collapsed': isSidebarCollapsed }">
           <el-menu router class="ui-menu" :default-active="activeMenu">
             <el-menu-item v-if="serviceValidMap.chipTrainer" index="/chip-trainer">
               筹码反应训练
@@ -231,7 +245,7 @@
           </el-menu>
         </aside>
 
-        <main class="ui-content">
+        <main class="ui-content" :class="{ 'content-expanded': isSidebarCollapsed }">
           <router-view />
         </main>
       </div>
@@ -322,5 +336,84 @@
   .ui-content {
     flex: 1;
     overflow: auto;
+    transition: margin-left 0.3s ease;
+  }
+
+  /* ================= 移动端侧边栏折叠 ================= */
+
+  .mobile-sidebar-toggle {
+    display: none; /* 默认隐藏 */
+    position: fixed;
+    left: 12px;
+    bottom: 20px;
+    z-index: 10002;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    font-size: 16px;
+    color: #333;
+    transition: all 0.3s ease;
+  }
+
+  .mobile-sidebar-toggle:hover {
+    background: #fff;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  }
+
+  .mobile-sidebar-toggle:active {
+    transform: scale(0.95);
+  }
+
+  /* 移动端横屏模式 - 调整为更大的断点以覆盖 iPhone 14 Pro Max 等大屏手机 */
+  @media (max-width: 1024px) and (orientation: landscape) {
+    .mobile-sidebar-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 折叠状态：隐藏侧边栏 */
+    .ui-sidebar.sidebar-collapsed {
+      transform: translateX(-100%);
+      width: 0;
+      overflow: hidden;
+    }
+
+    /* 内容区扩展 */
+    .ui-content.content-expanded {
+      margin-left: 0;
+    }
+
+    /* 侧边栏过渡动画 */
+    .ui-sidebar {
+      transition: transform 0.3s ease, width 0.3s ease;
+    }
+  }
+
+  /* 小屏竖屏也显示折叠按钮 */
+  @media (max-width: 768px) and (orientation: portrait) {
+    .mobile-sidebar-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ui-sidebar.sidebar-collapsed {
+      transform: translateX(-100%);
+      width: 0;
+      overflow: hidden;
+    }
+
+    .ui-content.content-expanded {
+      margin-left: 0;
+    }
+
+    .ui-sidebar {
+      transition: transform 0.3s ease, width 0.3s ease;
+    }
   }
 </style>

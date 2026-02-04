@@ -1,5 +1,5 @@
 <template>
-  <div class="card-stack-new" :style="{ transform: `scale(${scale})` }">
+  <div class="card-stack-new">
     <div
       v-for="i in count"
       :key="i"
@@ -22,7 +22,6 @@
     count?: number
     offsetX?: number
     offsetY?: number
-    scale?: number
   }>()
 </script>
 
@@ -32,7 +31,6 @@
       count: { type: Number, default: 15 },
       offsetX: { type: Number, default: 1 }, // 水平偏移
       offsetY: { type: Number, default: 2.5 }, // 垂直偏移
-      scale: { type: Number, default: 1 },
     },
   }
 </script>

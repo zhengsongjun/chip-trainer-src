@@ -196,18 +196,6 @@
       ang3: YellowAng3,
       ang4: YellowAng4,
     },
-    purple500: {
-      ang1: PurpleAng1,
-      ang2: PurpleAng2,
-      ang3: PurpleAng3,
-      ang4: PurpleAng4,
-    },
-    black100: {
-      ang1: TourBlackAng1,
-      ang2: TourBlackAng2,
-      ang3: TourBlackAng3,
-      ang4: TourBlackAng4,
-    },
   }
 
   const Comp = computed(() => mapByColor[props.color][props.angle])
