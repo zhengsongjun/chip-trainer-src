@@ -2384,25 +2384,6 @@
         }
       })
 
-    const highWinners = Hand.winners(solvedHigh.map((s) => s.hand))
-    const highWinnerSeats = solvedHigh
-      .filter((s) => highWinners.includes(s.hand))
-      .map((s) => s.seat)
-      .sort((a, b) => a - b)
-
-    const winners = Hand.winners(solvedHigh.map((s) => s.hand))
-    const winnerSeats = solvedHigh
-      .filter((s) => winners.includes(s.hand))
-      .map((s) => s.seat)
-      .sort((a, b) => a - b)
-    let finalLowWinnerSeats: number[] = []
-    let isCorrect =
-      winnerSeats.length === selectedHighSeats.value.length &&
-      winnerSeats.every((seat, i) => seat === selectedHighSeats.value[i])
-    const winnerDetails = solvedHigh
-      .filter((s) => winnerSeats.includes(s.seat))
-      .map((s) => `玩家 ${s.seat}: ${s.hand.descr}`)
-    let resultMsg = ''
       const highWinners = Hand.winners(solvedHigh.map((s) => s.hand))
       const winnerSeats = solvedHigh
         .filter((s) => highWinners.includes(s.hand))
